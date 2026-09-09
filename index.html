@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PwnAI — Instant Preview Deployments</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: '#3D81E3',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- React & React DOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+
+  <!-- Framer Motion -->
+  <script src="https://unpkg.com/framer-motion@11.1.7/dist/framer-motion.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Babel for JSX compilation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    html, body {
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background-color: #0c0c0c;
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+
+    ::selection {
+      background-color: rgba(61, 129, 227, 0.3);
+    }
+
+    /* Shiny gradient headline animation */
+    @keyframes shiny {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+
+    .animate-shiny {
+      animation: shiny 6s linear infinite;
+    }
+
+    /* Liquid-glass utility */
+    .liquid-glass {
+      background: rgba(255, 255, 255, 0.015);
+      background-blend-mode: luminosity;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: none;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .liquid-glass::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1.4px;
+      background: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(255, 255, 255, 0.15) 20%,
+        rgba(255, 255, 255, 0) 40%,
+        rgba(255, 255, 255, 0) 60%,
+        rgba(255, 255, 255, 0.15) 80%,
+        rgba(255, 255, 255, 0.45) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    /* Section Pricing Custom Styles */
+    .c3-pricing-section {
+      position: relative;
+      padding: 40px 20px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    .c3-watermark-container {
+      position: relative;
+      width: 100%;
+      max-width: 1100px;
+      text-align: center;
+      margin-top: 40px;
+      z-index: 2;
+    }
+
+    .c3-watermark-main {
+      font-size: 7.5rem;
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      filter: url(#c3-noise);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .c3-watermark-line-1 {
+      color: #fff;
+    }
+
+    .c3-watermark-line-2 {
+      background: linear-gradient(to right, #091020 0%, #0B2551 25%, #A4F4FD 65%, #00d2ff 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .c3-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 60px;
+      position: relative;
+      z-index: 3;
+    }
+
+    .c3-card {
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4));
+      backdrop-filter: blur(14px) brightness(0.91);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 44px;
+      padding: 50px 24px;
+      min-height: 580px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.6s cubic-bezier(.22, 1, .36, 1);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .c3-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%);
+      pointer-events: none;
+    }
+
+    .c3-card:hover {
+      background: rgba(15, 15, 15, 0.6);
+      border-color: rgba(34, 211, 238, 0.7);
+      transform: translateY(-12px) scale(1.01);
+    }
+
+    .c3-card-pro {
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.55));
+    }
+
+    .c3-tier-small {
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .c3-tier-large {
+      font-size: 2.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-top: 8px;
+    }
+
+    .c3-desc {
+      font-size: 0.88rem;
+      color: rgba(255, 255, 255, 0.45);
+      min-height: 3.2em;
+      margin-top: 16px;
+      margin-bottom: 40px;
+      line-height: 1.5;
+    }
+
+    .c3-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      font-size: 0.92rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+
+    .c3-check {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .c3-btn {
+      background: #fff;
+      color: #000;
+      padding: 12px 32px;
+      border-radius: 100px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      margin-top: auto;
+      border: none;
+      cursor: pointer;
+      align-self: center;
+      transition: all 0.3s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .c3-btn:hover {
+      background: #f5f5f5;
+      transform: scale(1.02);
+      box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+    }
+
+    .c3-toggle-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 32px;
+      padding-right: 20px;
+    }
+
+    .c3-toggle {
+      width: 52px;
+      height: 28px;
+      background: #fff;
+      border-radius: 100px;
+      position: relative;
+      cursor: pointer;
+      border: none;
+      transition: background 0.3s cubic-bezier(.4, 0, .2, 1);
+      padding: 0;
+    }
+
+    .c3-toggle-knob {
+      width: 20px;
+      height: 20px;
+      background: #000;
+      border-radius: 50%;
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .c3-toggle.active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .c3-toggle.active .c3-toggle-knob {
+      transform: translateX(24px);
+      background: #fff;
+    }
+
+    @media (max-width: 1024px) {
+      .c3-watermark-main {
+        font-size: 3.5rem;
+        filter: none;
+      }
+      .c3-watermark-line-2 {
+        background: none;
+        -webkit-text-fill-color: #00d2ff;
+        color: #00d2ff;
+      }
+      .c3-grid {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        transform: none;
+        width: 100vw;
+        padding: 0 20px;
+        gap: 16px;
+        scrollbar-width: none;
+      }
+      .c3-grid::-webkit-scrollbar {
+        display: none;
+      }
+      .c3-card {
+        flex: 0 0 320px;
+        scroll-snap-align: center;
+      }
+      .c3-toggle-wrap {
+        justify-content: center;
+        padding-right: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const { motion, AnimatePresence } = window.Motion || window.framerMotion || { motion: { div: 'div', h1: 'h1', nav: 'nav', section: 'section', p: 'p', a: 'a', button: 'button' }, AnimatePresence: React.Fragment };
+
+    const FloatingParticlesBackground = () => {
+      const canvasRef = useRef(null);
+
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let animationFrameId;
+        let width = (canvas.width = window.innerWidth);
+        let height = (canvas.height = window.innerHeight);
+
+        const handleResize = () => {
+          if (!canvas) return;
+          width = canvas.width = window.innerWidth;
+          height = canvas.height = window.innerHeight;
+          initParticles();
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        const particleCount = Math.min(Math.floor((width * height) / 9500), 110);
+        let particles = [];
+
+        const colors = [
+          'rgba(255, 255, 255, ',   // Bright glowing white
+          'rgba(220, 220, 220, ',   // Silver white
+          'rgba(160, 160, 160, ',   // Medium gray
+          'rgba(100, 100, 100, '    // Dark gray
+        ];
+
+        const initParticles = () => {
+          particles = [];
+          for (let i = 0; i < particleCount; i++) {
+            particles.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              radius: Math.random() * 2.2 + 0.6,
+              colorPrefix: colors[Math.floor(Math.random() * colors.length)],
+              baseAlpha: Math.random() * 0.45 + 0.15,
+              vx: (Math.random() - 0.5) * 0.35,
+              vy: (Math.random() - 0.5) * 0.35 - 0.1,
+              pulseSpeed: Math.random() * 0.015 + 0.005,
+              pulseAngle: Math.random() * Math.PI * 2
+            });
+          }
+        };
+
+        initParticles();
+
+        let mouse = { x: -1000, y: -1000 };
+        const handleMouseMove = (e) => {
+          mouse.x = e.clientX;
+          mouse.y = e.clientY;
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+
+        const render = () => {
+          ctx.clearRect(0, 0, width, height);
+
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            p.pulseAngle += p.pulseSpeed;
+            const currentAlpha = Math.max(0.08, p.baseAlpha + Math.sin(p.pulseAngle) * 0.22);
+
+            if (p.x < -10) p.x = width + 10;
+            if (p.x > width + 10) p.x = -10;
+            if (p.y < -10) p.y = height + 10;
+            if (p.y > height + 10) p.y = -10;
+
+            const dx = mouse.x - p.x;
+            const dy = mouse.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 130) {
+              const force = (130 - dist) / 130;
+              p.x -= (dx / dist) * force * 1.2;
+              p.y -= (dy / dist) * force * 1.2;
+            }
+
+            for (let j = i + 1; j < particles.length; j++) {
+              const p2 = particles[j];
+              const pdx = p.x - p2.x;
+              const pdy = p.y - p2.y;
+              const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
+
+              if (pdist < 105) {
+                const lineAlpha = (1 - pdist / 105) * 0.15 * currentAlpha;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${lineAlpha})`;
+                ctx.lineWidth = 0.75;
+                ctx.stroke();
+              }
+            }
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `${p.colorPrefix}${currentAlpha})`;
+            ctx.shadowBlur = p.radius > 1.8 ? 8 : 0;
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+
+          animationFrameId = requestAnimationFrame(render);
+        };
+
+        render();
+
+        return () => {
+          window.removeEventListener('resize', handleResize);
+          window.removeEventListener('mousemove', handleMouseMove);
+          cancelAnimationFrame(animationFrameId);
+        };
+      }, []);
+
+      return (
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0c0c0c]">
+          <div 
+            className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full blur-[140px] opacity-15 pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.05) 50%, transparent 80%)' }}
+          />
+          <div 
+            className="absolute bottom-1/3 left-1/3 w-[500px] h-[400px] rounded-full blur-[160px] opacity-10 pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(200,200,200,0.2) 0%, transparent 70%)' }}
+          />
+          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none" />
+        </div>
+      );
+    };
+
+    const LogoMark = ({ className = "w-8 h-8" }) => (
+      <svg className={className} viewBox="0 0 256 256" fill="white">
+        <path d="M 0 128 C 70.692 128 128 185.308 128 256 L 64 256 C 64 220.654 35.346 192 0 192 Z M 256 192 C 220.654 192 192 220.654 256 128 L 128 256 C 128 185.308 185.308 128 256 128 Z M 128 0 C 128 70.692 70.692 128 0 128 L 0 64 C 35.346 64 64 35.346 64 0 Z M 192 0 C 192 35.346 220.654 64 256 64 L 256 128 C 185.308 128 128 70.692 128 0 Z" />
+      </svg>
+    );
+
+    const ChevronRightIcon = ({ className = "w-4 h-4" }) => (
+      <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    );
+
+    const BuildButton = ({ label = "Build Now", full = false }) => (
+      <button className={`group inline-flex items-center justify-center gap-2 rounded-full bg-white text-black font-semibold text-sm px-6 py-3 transition-all hover:bg-white/90 active:scale-[0.98] shadow-lg shadow-white/5 ${full ? 'w-full' : ''}`}>
+        <span>{label}</span>
+        <span className="transition-transform duration-200 group-hover:translate-x-[2px]">
+          <ChevronRightIcon className="w-4 h-4" />
+        </span>
+      </button>
+    );
+
+    const gradientStyle = {
+      backgroundImage: 'linear-gradient(to right, #666666 0%, #ffffff 25%, #aaaaaa 50%, #ffffff 75%, #666666 100%)',
+      backgroundSize: '200% auto',
+      WebkitBackgroundClip: 'text',
+      backgroundClip: 'text',
+      color: 'transparent',
+      WebkitTextFillColor: 'transparent',
+      filter: 'url(#c3-noise)'
+    };
+
+    const Navbar = () => {
+      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+      const links = ['Projects', 'Architecture', 'Ecosystem'];
+
+      return (
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="fixed top-4 inset-x-0 mx-auto z-50 w-[calc(100%-2rem)] max-w-xl"
+        >
+          <nav className="liquid-glass rounded-full px-5 py-2.5 flex items-center justify-between shadow-2xl border border-white/10">
+            {/* Left: LogoMark only */}
+            <div className="flex items-center">
+              <a href="#" aria-label="PwnAI Home" className="flex items-center gap-2">
+                <LogoMark className="w-6 h-6" />
+                <span className="font-bold text-white tracking-tight text-xs sm:text-sm hidden sm:inline">PwnAI</span>
+              </a>
+            </div>
+
+            {/* Center Links (Desktop) */}
+            <div className="hidden md:flex items-center gap-6">
+              {links.map((link, i) => (
+                <motion.a
+                  key={link}
+                  href={`#${link.toLowerCase()}`}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 + i * 0.05 }}
+                  className="text-white/70 text-xs sm:text-sm font-medium hover:text-white transition-colors"
+                >
+                  {link}
+                </motion.a>
+              ))}
+            </div>
+
+            {/* Right Desktop: Build Button */}
+            <div className="hidden md:block">
+              <BuildButton label="Build Now" />
+            </div>
+
+            {/* Mobile Right: Menu Icon Button */}
+            <div className="md:hidden">
+              <button 
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="w-8 h-8 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white"
+              >
+                <i data-lucide={mobileMenuOpen ? "x" : "menu"} className="w-4 h-4"></i>
+              </button>
+            </div>
+          </nav>
+
+          {/* Mobile Menu Overlay */}
+          {mobileMenuOpen && (
+            <div className="absolute top-16 left-0 right-0 p-6 rounded-3xl bg-[#0e1014]/95 backdrop-blur-2xl border border-white/10 flex flex-col gap-4 md:hidden z-50 shadow-2xl">
+              {links.map((link) => (
+                <a
+                  key={link}
+                  href={`#${link.toLowerCase()}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-white/80 text-base font-medium py-2 hover:text-white border-b border-white/5"
+                >
+                  {link}
+                </a>
+              ))}
+              <div className="pt-2">
+                <BuildButton label="Build Now" full />
+              </div>
+            </div>
+          )}
+        </motion.header>
+      );
+    };
+
+    const Hero = () => {
+      return (
+        <section className="relative z-10 pt-36 md:pt-44 pb-16 text-center flex flex-col items-center max-w-5xl mx-auto px-6">
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="text-4xl sm:text-6xl md:text-7xl font-semibold tracking-tight leading-[1.02]"
+          >
+            <div>Instant Previews</div>
+            <div className="animate-shiny inline-block mt-2" style={gradientStyle}>
+              Built for PwnAI.
+            </div>
+          </motion.h1>
+
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-8 text-white/60 max-w-xl text-base md:text-lg leading-[1.6]"
+          >
+            Isolated preview deployments for modern applications generated through the PwnAI ecosystem. Zero friction, instant delivery.
+          </motion.p>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-10 flex items-center justify-center"
+          >
+            <BuildButton label="Build Now" />
+          </motion.div>
+        </section>
+      );
+    };
+
+    const ProjectsSection = () => {
+      return (
+        <section className="relative z-10 max-w-6xl mx-auto px-6 py-12 md:py-16" id="projects">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="liquid-glass rounded-3xl p-8 md:p-12 min-h-[420px] flex flex-col items-center justify-center text-center relative overflow-hidden"
+          >
+            {/* Ambient inner glow */}
+            <div 
+              className="absolute inset-0 pointer-events-none opacity-20"
+              style={{
+                background: 'radial-gradient(800px circle at 50% 50%, rgba(255, 255, 255, 0.15), transparent 70%)'
+              }}
+            />
+
+            {/* Empty state glass content */}
+            <div className="relative z-10 flex flex-col items-center max-w-md">
+              <div className="w-16 h-16 rounded-2xl liquid-glass flex items-center justify-center border border-white/10 mb-6 text-white/40">
+                <i data-lucide="folder-plus" className="w-7 h-7"></i>
+              </div>
+
+              <h3 className="text-xl font-medium text-white/90">
+                Project Workspace
+              </h3>
+
+              <p className="mt-2 text-sm text-white/40 leading-relaxed mb-6">
+                Your PwnAI ecosystem deployments will be isolated and displayed here in real time.
+              </p>
+
+              <a 
+                href="https://pwnaidev.vercel.app" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-white text-black font-semibold text-sm px-6 py-3 transition-all hover:bg-white/90 active:scale-[0.98] shadow-lg shadow-white/5"
+              >
+                <span>Create First Project</span>
+                <span className="transition-transform duration-200 group-hover:translate-x-[2px]">
+                  <ChevronRightIcon className="w-4 h-4" />
+                </span>
+              </a>
+            </div>
+          </motion.div>
+        </section>
+      );
+    };
+
+    const ArchitectureSection = () => {
+      const [activeStep, setActiveStep] = useState(0);
+      const [copied, setCopied] = useState(false);
+
+      const steps = [
+        {
+          id: 'dev',
+          title: '1. Web App Builder',
+          domain: 'pwnaidev.vercel.app',
+          icon: 'code-2',
+          badge: 'IDE & AI Prompt',
+          desc: 'Kullanıcı pwnaidev.vercel.app üzerinde web uygulamasını oluşturur ve "Deploy" butonuna tıklar.',
+          highlight: 'Deploy Trigger'
+        },
+        {
+          id: 'build',
+          title: '2. Isolated Build Pipeline',
+          domain: '',
+          icon: 'cpu',
+          badge: 'Sandbox Worker',
+          desc: 'Otomatik build worker kodu derler, güvenlik ve bağımlılık taramalarını gerçekleştirir.',
+          highlight: 'Sandboxed Build'
+        },
+        {
+          id: 'gateway',
+          title: '3. Preview Gateway',
+          domain: 'pwnreview.vercel.app',
+          icon: 'network',
+          badge: 'Edge Router',
+          desc: 'Dynamic Reverse Proxy isteği yakalar ve ilgili kullanıcı/proje önizleme alanına yönlendirir.',
+          highlight: 'Proxy Routing'
+        },
+        {
+          id: 'live',
+          title: '4. Dynamic Route Preview',
+          domain: 'pwnreview.vercel.app/username/projectname',
+          icon: 'globe',
+          badge: 'Live URL',
+          desc: 'Kullanıcı ve ziyaretçiler /username/projectname URL adresi üzerinden anında canlı önizlemeye erişir.',
+          highlight: 'Instant Live'
+        }
+      ];
+
+      const copyToClipboard = (text) => {
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+          console.error('Copy error', err);
+        }
+      };
+
+      return (
+        <section className="relative z-10 max-w-6xl mx-auto px-6 py-16 md:py-24" id="architecture">
+          <div className="text-center max-w-3xl mx-auto mb-14">
+            <span className="text-xs uppercase tracking-widest text-white/50 font-semibold px-3 py-1 rounded-full bg-white/5 border border-white/10">
+              Sistem Mimarisi
+            </span>
+            <h2 className="text-3xl md:text-5xl font-semibold tracking-tight text-white mt-4">
+              Nasıl Çalışır?
+            </h2>
+            <p className="mt-4 text-white/60 text-sm md:text-base leading-relaxed">
+              <code className="text-white font-mono bg-white/10 px-2 py-0.5 rounded border border-white/20">pwnaidev.vercel.app</code> üzerinden "Deploy" butonuna basıldığı andan itibaren <code className="text-white font-mono bg-white/10 px-2 py-0.5 rounded border border-white/20">pwnreview.vercel.app/username/projectname</code> üzerinde canlı yayına geçiş süreci.
+            </p>
+          </div>
+
+          <div className="liquid-glass rounded-3xl p-6 md:p-10 border border-white/10 relative overflow-hidden">
+            {/* Ambient Lighting */}
+            <div className="absolute -top-24 -left-24 w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Architecture Steps Horizontal Flow */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
+              {steps.map((step, idx) => {
+                const isActive = activeStep === idx;
+                return (
+                  <div
+                    key={step.id}
+                    onClick={() => setActiveStep(idx)}
+                    className={`cursor-pointer rounded-2xl p-5 border transition-all duration-300 relative flex flex-col justify-between ${
+                      isActive
+                        ? 'bg-white/10 border-white/40 shadow-xl shadow-white/5 scale-[1.02]'
+                        : 'bg-white/[0.02] border-white/10 hover:bg-white/[0.05] hover:border-white/20'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${isActive ? 'bg-white text-black border-white' : 'bg-white/5 text-white/70 border-white/10'}`}>
+                          <i data-lucide={step.icon} className="w-5 h-5"></i>
+                        </div>
+                        <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/50">
+                          {step.badge}
+                        </span>
+                      </div>
+
+                      <h3 className="text-base font-semibold text-white mb-1">
+                        {step.title}
+                      </h3>
+                      {step.domain ? (
+                        <div className="text-xs font-mono text-white/90 truncate mb-3 bg-black/60 px-2.5 py-1 rounded-md border border-white/15">
+                          {step.domain}
+                        </div>
+                      ) : (
+                        <div className="mb-3 h-6" />
+                      )}
+                      <p className="text-xs text-white/60 leading-relaxed">
+                        {step.desc}
+                      </p>
+                    </div>
+
+                    <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-white/40 font-mono">
+                      <span>Adım 0{idx + 1}</span>
+                      {idx < steps.length - 1 && (
+                        <span className="hidden lg:inline text-white/40 font-bold">→</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Live Interactive Route Simulation Card */}
+            <div className="mt-10 pt-8 border-t border-white/10 grid md:grid-cols-12 gap-6 items-center">
+              <div className="md:col-span-5 flex flex-col gap-3">
+                <span className="text-xs font-semibold tracking-wider text-white/40 uppercase">
+                  Uçtan Uça Mimari Önizleme
+                </span>
+                <h4 className="text-lg md:text-xl font-medium text-white">
+                  Dinamik Route Yönlendirmesi
+                </h4>
+                <p className="text-xs text-white/60 leading-relaxed">
+                  PwnAI ekosisteminde geliştirilen web siteleri, doğrudan <span className="text-white font-mono bg-white/10 px-1.5 py-0.5 rounded">/username/projectname</span> yapısıyla izole edilmiş preview subdomain sandbox'larında anında sunulur.
+                </p>
+              </div>
+
+              {/* Browser Mockup Panel */}
+              <div className="md:col-span-7 bg-[#05070a] border border-white/15 rounded-2xl overflow-hidden shadow-2xl">
+                {/* Browser Top Bar */}
+                <div className="bg-white/5 px-4 py-3 flex items-center justify-between border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                  </div>
+                  <div className="flex-1 mx-4 max-w-md bg-black/70 border border-white/10 rounded-lg px-3 py-1.5 flex items-center justify-between text-xs font-mono text-white/80">
+                    <span className="truncate">
+                      https://<span className="text-white font-bold font-mono">pwnreview.vercel.app</span>/<span className="text-white/80 font-mono italic">username</span>/<span className="text-white/80 font-mono italic">projectname</span>
+                    </span>
+                    <button
+                      onClick={() => copyToClipboard('https://pwnreview.vercel.app/username/projectname')}
+                      className="ml-2 hover:text-white transition-colors text-white/40 flex-shrink-0"
+                      title="URL'yi Kopyala"
+                    >
+                      <i data-lucide={copied ? "check" : "copy"} className="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+                  <div className="w-12"></div>
+                </div>
+
+                {/* Preview Frame Mock Content */}
+                <div className="p-6 font-mono text-xs text-white/80 space-y-3 bg-gradient-to-b from-black/90 to-[#080b10]">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <div className="flex items-center gap-2 text-emerald-400">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>Status: 200 OK (Deployed)</span>
+                    </div>
+                    <span className="text-white/40 text-[11px]">Sandboxed Edge Deployment</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-[11px] pt-1">
+                    <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
+                      <div className="text-white/40 mb-1">Geliştirme IDE URL</div>
+                      <div className="text-white font-mono font-medium truncate">pwnaidev.vercel.app</div>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
+                      <div className="text-white/40 mb-1">Önizleme Gateway</div>
+                      <div className="text-white font-mono font-medium truncate">pwnreview.vercel.app</div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-white/90 text-xs flex items-center justify-between">
+                    <span className="text-white/60">🚀 Canlı Önizleme Bağlantısı:</span>
+                    <a
+                      href="https://pwnreview.vercel.app"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono font-semibold text-white hover:text-white/70 underline decoration-white/40 transition-colors"
+                    >
+                      pwnreview.vercel.app/username/projectname →
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    };
+
+    const PoweredBy = () => {
+      const brands = [
+        { name: "GitHub", icon: "github" },
+        { name: "Clerk", icon: "shield-check" },
+        { name: "Supabase", icon: "database" },
+        { name: "Google", icon: "globe" },
+        { name: "OpenAI", icon: "sparkles" },
+        { name: "Vercel", icon: "triangle" }
+      ];
+
+      return (
+        <section className="relative z-10 max-w-6xl mx-auto px-6 py-16 md:py-20" id="ecosystem">
+          <div className="text-center">
+            <span className="text-xs uppercase tracking-widest text-white/40 font-semibold">
+              POWERED BY
+            </span>
+          </div>
+
+          <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 items-center justify-items-center">
+            {brands.map((brand, i) => (
+              <motion.div
+                key={brand.name}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                className="flex items-center gap-2.5 text-base font-semibold tracking-tight text-white/60 hover:text-white transition-colors cursor-pointer py-2 px-4 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10"
+              >
+                <i data-lucide={brand.icon} className="w-4 h-4 text-white/70"></i>
+                <span>{brand.name}</span>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      );
+    };
+
+    const Testimonials = () => {
+      const testimonials = [
+        {
+          quote: "PwnAI preview environments transformed our deployment pipeline. Instant feedback loops for every iteration.",
+          name: "Parker Wilf",
+          role: "Engineering Director",
+          company: "MERCURY"
+        },
+        {
+          quote: "Zero friction setup with Supabase and Clerk integrations right out of the box.",
+          name: "Andrew von Rosenbach",
+          role: "Lead Platform Architect",
+          company: "COHERE"
+        },
+        {
+          quote: "The isolated deployment sandboxes are blazingly fast. It feels like magic.",
+          name: "Mathies Christensen",
+          role: "Senior Systems Engineer",
+          company: "LUNAR"
+        }
+      ];
+
+      return (
+        <section className="relative z-10 max-w-6xl mx-auto px-6 py-20 md:py-28 border-t border-white/10">
+          <div className="grid md:grid-cols-3 gap-6">
+            {testimonials.map((t, idx) => (
+              <motion.figure 
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: idx * 0.15 }}
+                className="liquid-glass rounded-2xl p-6 flex flex-col justify-between"
+              >
+                <blockquote className="text-sm text-white/80 leading-[1.6]">
+                  "{t.quote}"
+                </blockquote>
+                <figcaption className="mt-6 pt-5 border-t border-white/10">
+                  <div className="text-sm font-semibold text-white">{t.name}</div>
+                  <div className="text-xs text-white/50 mt-0.5">{t.role}</div>
+                  <div className="text-xs text-white font-semibold tracking-wide uppercase mt-2">
+                    {t.company}
+                  </div>
+                </figcaption>
+              </motion.figure>
+            ))}
+          </div>
+        </section>
+      );
+    };
+
+    const Pricing = () => {
+      const [yearly, setYearly] = useState(false);
+
+      const plans = [
+        {
+          tier: "Free",
+          price: "Free",
+          desc: "For individual developers exploring PwnAI previews.",
+          features: [
+            "Up to 3 active preview deployments",
+            "Automatic GitHub commits trigger",
+            "Basic telemetry & logging",
+            "Community Support"
+          ],
+          pro: false
+        },
+        {
+          tier: "Standard",
+          price: yearly ? "$99/y" : "$9.99/m",
+          desc: "For small teams and startups building next-gen apps.",
+          features: [
+            "Up to 50 active preview deployments",
+            "Custom domain mapping",
+            "Supabase & Clerk integration",
+            "Priority build queues"
+          ],
+          pro: false
+        },
+        {
+          tier: "Pro",
+          price: yearly ? "$199/y" : "$19.99/m",
+          desc: "For enterprise organizations demanding instant scale and isolated security.",
+          features: [
+            "Unlimited preview deployments",
+            "Dedicated PwnAI isolated sandboxes",
+            "SLA & 24/7 Priority Support",
+            "Custom LLM tool integrations"
+          ],
+          pro: true
+        }
+      ];
+
+      return (
+        <section className="c3-pricing-section" id="pricing">
+          <svg className="hidden">
+            <defs>
+              <filter id="c3-noise">
+                <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" stitchTiles="stitch" />
+                <feComponentTransfer><feFuncA type="linear" slope="0.075" /></feComponentTransfer>
+                <feComposite in2="SourceGraphic" operator="in" result="noise" />
+                <feBlend in="SourceGraphic" in2="noise" mode="overlay" />
+              </filter>
+            </defs>
+          </svg>
+
+          {/* Watermark Backdrop */}
+          <div className="c3-watermark-container">
+            <div className="c3-watermark-main">
+              <span className="c3-watermark-line-1">Instant Deploy.</span>
+              <span className="c3-watermark-line-2">PwnAI Ecosystem</span>
+            </div>
+          </div>
+
+          {/* Pricing Toggle */}
+          <div className="c3-toggle-wrap">
+            <span className="text-sm font-medium text-white/70">Yearly (Save 20%)</span>
+            <button 
+              onClick={() => setYearly(!yearly)}
+              className={`c3-toggle ${yearly ? 'active' : ''}`}
+            >
+              <div className="c3-toggle-knob" />
+            </button>
+          </div>
+
+          {/* Cards Grid */}
+          <div className="c3-grid">
+            {plans.map((plan, i) => (
+              <div key={i} className={`c3-card ${plan.pro ? 'c3-card-pro' : ''}`}>
+                <div className="c3-tier-small">{plan.tier}</div>
+                <div className="c3-tier-large">{plan.price}</div>
+                <div className="c3-desc">{plan.desc}</div>
+                <ul className="c3-list">
+                  {plan.features.map((feat, j) => (
+                    <li key={j}>
+                      <span className="c3-check">
+                        <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </span>
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button className="c3-btn">Choose Plan</button>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    };
+
+    const FinalCTA = () => {
+      return (
+        <section className="relative z-10 max-w-6xl mx-auto px-6 py-20 md:py-32">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="liquid-glass relative overflow-hidden rounded-3xl px-8 py-16 md:py-24 text-center"
+          >
+            <div 
+              className="absolute inset-0 pointer-events-none opacity-30" 
+              style={{
+                background: 'radial-gradient(600px circle at 50% 0%, rgba(255,255,255,0.15), transparent 70%)'
+              }}
+            />
+
+            <h2 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.02] text-white">
+              Instant Deployments. <br /> Zero friction.
+            </h2>
+
+            <p className="mt-6 text-white/60 max-w-md mx-auto text-sm md:text-base leading-[1.6]">
+              Accelerate your development cycle with the PwnAI preview ecosystem.
+            </p>
+
+            <div className="mt-10 flex items-center justify-center">
+              <BuildButton label="Build Now" />
+            </div>
+          </motion.div>
+        </section>
+      );
+    };
+
+    const App = () => {
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+
+      return (
+        <div className="relative min-h-screen overflow-x-hidden bg-[#0c0c0c] text-white">
+          
+          {/* Canvas Interactive Floating Particles Background */}
+          <FloatingParticlesBackground />
+
+          {/* Container vertical border guide lines */}
+          <div className="hidden md:block pointer-events-none fixed inset-y-0 left-1/2 -translate-x-[calc(50%+36rem)] w-px bg-white/10 z-[5]" />
+          <div className="hidden md:block pointer-events-none fixed inset-y-0 left-1/2 translate-x-[calc(-50%+36rem)] w-px bg-white/10 z-[5]" />
+
+          {/* Root SVG Noise Filter */}
+          <svg className="hidden">
+            <defs>
+              <filter id="c3-noise">
+                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" />
+                <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.35 0" />
+                <feComposite in2="SourceGraphic" operator="in" result="noise" />
+                <feBlend in="SourceGraphic" in2="noise" mode="multiply" />
+              </filter>
+            </defs>
+          </svg>
+
+          {/* Sticky Capsule Liquid Glass Navbar */}
+          <Navbar />
+
+          {/* Main Sections */}
+          <Hero />
+          <ProjectsSection />
+          <ArchitectureSection />
+          <PoweredBy />
+          <FinalCTA />
+
+        </div>
+      );
+    };
+
+    // Render React App
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
