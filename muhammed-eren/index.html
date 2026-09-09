@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>muhammed-eren - Proje Vitrini | PwnReview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } }
+    };
+  </script>
+</head>
+<body class="bg-[#09090b] text-zinc-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500/20 selection:text-emerald-400">
+  <!-- Header -->
+  <header class="border-b border-white/[0.08] bg-[#121215]/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-2 text-sm font-semibold text-white hover:text-emerald-400 transition-colors">
+          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs">P</span>
+          <span>PwnReview</span>
+        </a>
+        <span class="text-zinc-600 text-xs">/</span>
+        <span class="text-xs font-mono text-zinc-400 bg-white/[0.04] px-2 py-0.5 rounded-md border border-white/[0.06]">@muhammed-eren</span>
+      </div>
+      <a href="https://pwnaidev.vercel.app" target="_blank" class="text-xs font-medium text-zinc-400 hover:text-white transition-colors flex items-center gap-1">
+        <span>PwnAI Studio</span>
+        <span>↗</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- User Profile Banner -->
+  <main class="max-w-5xl mx-auto px-4 py-10 flex-1 w-full space-y-8">
+    <div class="p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-white/[0.04] to-transparent border border-white/[0.08] shadow-2xl relative overflow-hidden">
+      <div class="absolute -right-20 -top-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl font-bold text-emerald-400 font-mono">
+            M
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-white tracking-tight">muhammed-eren</h1>
+            <p class="text-xs text-zinc-400 mt-0.5">PwnAI ile oluşturulmuş canlı web projeleri vitrini</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            1 Canlı Proje
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects Grid -->
+    <div class="space-y-4">
+      <h2 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider text-[11px]">Projeler</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        <a href="./modern-e-ticaret-platformu/" class="group block p-5 rounded-xl bg-[#121215] border border-white/[0.06] hover:border-emerald-500/40 hover:bg-[#16161a] transition-all duration-200 shadow-lg relative overflow-hidden">
+          <div class="flex items-start justify-between gap-2 mb-3">
+            <h3 class="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors truncate">Modern E-Ticaret Platformu</h3>
+            <span class="text-zinc-500 group-hover:text-white transition-colors text-xs shrink-0">↗</span>
+          </div>
+          <p class="font-mono text-[11px] text-zinc-500 truncate mb-4">/muhammed-eren/modern-e-ticaret-platformu/</p>
+          <div class="flex items-center justify-between text-[10px] text-zinc-400 border-t border-white/[0.04] pt-3">
+            <span>Canlı Önizleme</span>
+            <span class="text-emerald-400 font-medium">Aktif</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/[0.06] py-6 text-center text-xs text-zinc-600">
+    <p>PwnReview Showcase • Powered by <a href="https://pwnaidev.vercel.app" class="text-zinc-400 hover:text-white">PwnAI Studio</a></p>
+  </footer>
+</body>
+</html>
