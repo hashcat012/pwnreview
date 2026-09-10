@@ -2,6 +2,11 @@
   "username": "admin",
   "projects": [
     {
+      "name": "yapay",
+      "title": "yapay",
+      "updatedAt": "2026-09-10T09:41:59.615Z"
+    },
+    {
       "name": "ai-orchestrator-dashboard",
       "title": "AI Orchestrator Dashboard",
       "updatedAt": "2026-09-09T19:31:07.743Z"
