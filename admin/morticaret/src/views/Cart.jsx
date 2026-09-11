@@ -1,0 +1,7 @@
+import { Trash2, ArrowRight } from "lucide-react";
+
+export default function Cart({ cart, setCart }) {
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const changeQty = (id, delta) => setCart(cart.map(x => x.id === id ? {...x, qty: Math.max(1, x.qty + delta)} : x));
+  return <main className="section cartPage"><span className="eyebrow">Morticaret / Çanta</span><h1>Sepetin</h1>{cart.length === 0 ? <div className="empty">Sepetin henüz boş. Koleksiyona göz atmaya ne dersin?</div> : <div className="cartLayout"><div className="cartItems">{cart.map(item => <div className="cartItem" key={item.id}><div className="cartEmoji">{item.emoji}</div><div className="cartName"><b>{item.name}</b><small>{item.category}</small></div><div className="qty"><button onClick={() => changeQty(item.id,-1)}>−</button><span>{item.qty}</span><button onClick={() => changeQty(item.id,1)}>+</button></div><strong>{(item.price * item.qty).toLocaleString("tr-TR")} ₺</strong><button className="delete" onClick={() => setCart(cart.filter(x => x.id !== item.id))}><Trash2 size={18}/></button></div>)}</div><aside className="summary"><h2>Sipariş özeti</h2><div><span>Ara toplam</span><b>{total.toLocaleString("tr-TR")} ₺</b></div><div><span>Kargo</span><b>{total >= 750 ? "Ücretsiz" : "89 ₺"}</b></div><hr/><div className="grand"><span>Toplam</span><b>{(total + (total >= 750 ? 0 : 89)).toLocaleString("tr-TR")} ₺</b></div><button className="primary full">Ödemeye geç <ArrowRight size={18}/></button></aside></div>}</main>;
+}
