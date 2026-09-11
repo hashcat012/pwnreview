@@ -2,6 +2,11 @@
   "username": "admin",
   "projects": [
     {
+      "name": "minimalist",
+      "title": "Minimalist",
+      "updatedAt": "2026-09-11T07:40:33.638Z"
+    },
+    {
       "name": "yapay",
       "title": "yapay",
       "updatedAt": "2026-09-10T09:41:59.615Z"
