@@ -2,6 +2,11 @@
   "username": "admin",
   "projects": [
     {
+      "name": "mod",
+      "title": "mod",
+      "updatedAt": "2026-09-11T09:14:49.175Z"
+    },
+    {
       "name": "minimalist",
       "title": "Minimalist",
       "updatedAt": "2026-09-11T07:40:33.638Z"
