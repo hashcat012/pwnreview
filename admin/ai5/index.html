@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Fast React 18 UMD & Babel Standalone (Cloudflare cdnjs CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.3/confetti.browser.min.js"></script>
+
+  <style>
+    *, ::before, ::after { box-sizing: border-box; }
+    body::before, html::before, #root::before { content: none !important; display: none !important; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
+    body { background-color: #ffffff; color: #09090b; font-family: 'Inter', system-ui, sans-serif; }
+    #root { min-height: 100vh; }
+    @keyframes pwnai-spin { to { transform: rotate(360deg); } }
+    .pwnai-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: pwnai-spin 0.8s linear infinite;
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-white antialiased min-h-screen">
+  <div id="root">
+    <div id="__pwnai_loader" style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px;color:#a1a1aa;font-family:'Inter',system-ui,sans-serif;text-align:center;padding:24px;">
+            <div class="pwnai-spinner"></div>
+            <div>
+              <h3 style="font-size:14px;font-weight:600;color:#f4f4f5;margin:0 0 4px 0;">Önizleme Hazırlanıyor...</h3>
+              <p style="font-size:12px;color:#71717a;margin:0;" id="__pwnai_loader_status">Bileşenler derleniyor...</p>
+            </div>
+          </div>
+  </div>
+
+  <!-- Error Overlay -->
+  <div id="__err_overlay" style="display:none;position:fixed;inset:0;background:rgba(9,9,11,0.85);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;padding:16px;">
+    <div style="max-width:580px;width:100%;background:#18181b;border:1px solid #27272a;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);overflow:hidden;font-family:'Inter',system-ui,sans-serif;">
+      <div style="padding:16px 20px;border-bottom:1px solid #27272a;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#ef444420;border:1px solid #ef444440;display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:12px;font-weight:bold;">!</div>
+          <span id="__err_title" style="font-size:14px;font-weight:600;color:#fafafa;">Çalıştırma Hatası</span>
+        </div>
+      </div>
+      <div style="padding:16px 20px;max-height:240px;overflow:auto;background:#09090b;">
+        <pre id="__err_text" style="margin:0;font-family:ui-monospace,monospace;font-size:12px;color:#fca5a5;white-space:pre-wrap;word-break:break-word;line-height:1.5;"></pre>
+      </div>
+      <div style="padding:12px 20px;background:#18181b;display:flex;align-items:center;justify-content:flex-end;gap:10px;">
+        <button id="__err_retry_btn" style="padding:8px 14px;border-radius:8px;border:1px solid #3f3f46;background:#27272a;color:#fafafa;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">
+          Yeniden Dene
+        </button>
+        <button id="__err_fix_btn" style="padding:8px 16px;border-radius:8px;border:none;background:#fafafa;color:#09090b;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+          <span>✨ Fix with AI</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Base64 Initial Files Payload (immune to unescaped token/character syntax errors) -->
+  <script id="__pwnai_initial_files" type="text/plain" style="display:none;">W3sibmFtZSI6InBhY2thZ2UuanNvbiIsImNvbnRlbnQiOiJ7XG4gIFwibmFtZVwiOiBcInJlYWx0aW1lLWNoYXRib3QtMjFzdGRldlwiLFxuICBcInZlcnNpb25cIjogXCIxLjAuMFwiLFxuICBcInByaXZhdGVcIjogdHJ1ZSxcbiAgXCJ0eXBlXCI6IFwibW9kdWxlXCIsXG4gIFwic2NyaXB0c1wiOiB7XG4gICAgXCJkZXZcIjogXCJ2aXRlXCIsXG4gICAgXCJidWlsZFwiOiBcInZpdGUgYnVpbGRcIixcbiAgICBcInByZXZpZXdcIjogXCJ2aXRlIHByZXZpZXdcIlxuICB9LFxuICBcImRlcGVuZGVuY2llc1wiOiB7XG4gICAgXCJyZWFjdFwiOiBcIl4xOC4yLjBcIixcbiAgICBcInJlYWN0LWRvbVwiOiBcIl4xOC4yLjBcIixcbiAgICBcInJlYWN0LXJvdXRlci1kb21cIjogXCJeNi4xNi4wXCIsXG4gICAgXCJmcmFtZXItbW90aW9uXCI6IFwiXjExLjAuMFwiLFxuICAgIFwibHVjaWRlLXJlYWN0XCI6IFwiXjAuMzc4LjBcIixcbiAgICBcImNsc3hcIjogXCJeMi4xLjBcIlxuICB9LFxuICBcImRldkRlcGVuZGVuY2llc1wiOiB7XG4gICAgXCJ2aXRlXCI6IFwiXjUuMi4wXCIsXG4gICAgXCJ0YWlsd2luZGNzc1wiOiBcIl4zLjQuMFwiLFxuICAgIFwicG9zdGNzc1wiOiBcIl44LjQuMzFcIixcbiAgICBcImF1dG9wcmVmaXhlclwiOiBcIl4xMC40LjE2XCJcbiAgfVxufSJ9LHsibmFtZSI6InZpdGUuY29uZmlnLmpzIiwiY29udGVudCI6ImltcG9ydCB7IGRlZmluZUNvbmZpZyB9IGZyb20gJ3ZpdGUnO1xuaW1wb3J0IHJlYWN0IGZyb20gJ0B2aXRlanMvcGx1Z2luLXJlYWN0JztcblxuZXhwb3J0IGRlZmF1bHQgZGVmaW5lQ29uZmlnKHtcbiAgcGx1Z2luczogW3JlYWN0KCldLFxuICBzZXJ2ZXI6IHtcbiAgICBwb3J0OiA1MTczLFxuICAgIG9wZW46IHRydWVcbiAgfVxufSk7In0seyJuYW1lIjoidGFpbHdpbmQuY29uZmlnLmNqcyIsImNvbnRlbnQiOiIvKiogQHR5cGUge2ltcG9ydCgndGFpbHdpbmRjc3MnKS5Db25maWd9ICovXG5tb2R1bGUuZXhwb3J0cyA9IHtcbiAgY29udGVudDogW1xuICAgIFwiLi9pbmRleC5odG1sXCIsXG4gICAgXCIuL3NyYy8qKi8qLntqcyxqc3gsdHMsdHN4fVwiXG4gIF0sXG4gIHRoZW1lOiB7XG4gICAgZXh0ZW5kOiB7XG4gICAgICBjb2xvcnM6IHtcbiAgICAgICAgemluYzoge1xuICAgICAgICAgIDk1MDogXCIjMDkwOTBiXCIsXG4gICAgICAgICAgOTAwOiBcIiMxODE4MWJcIixcbiAgICAgICAgICA4MDA6IFwiIzI3MjcyYVwiXG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH0sXG4gIHBsdWdpbnM6IFtdXG59OyJ9LHsibmFtZSI6InBvc3Rjc3MuY29uZmlnLmNqcyIsImNvbnRlbnQiOiJtb2R1bGUuZXhwb3J0cyA9IHtcbiAgcGx1Z2luczoge1xuICAgIHRhaWx3aW5kY3NzOiB7fSxcbiAgICBhdXRvcHJlZml4ZXI6IHt9XG4gIH1cbn07In0seyJuYW1lIjoiaW5kZXguaHRtbCIsImNvbnRlbnQiOiI8IURPQ1RZUEUgaHRtbD5cbjxodG1sIGxhbmc9XCJ0clwiIGNsYXNzPVwiaC1mdWxsIGJnLXppbmMtOTUwIHRleHQtemluYy0xMDBcIj5cbiAgPGhlYWQ+XG4gICAgPG1ldGEgY2hhcnNldD1cIlVURi04XCIgLz5cbiAgICA8bWV0YSBuYW1lPVwidmlld3BvcnRcIiBjb250ZW50PVwid2lkdGg9ZGV2aWNlLXdpZHRoLCBpbml0aWFsLXNjYWxlPTEuMFwiIC8+XG4gICAgPHRpdGxlPlJlYWzigJFUaW1lIENoYXRib3QgRGVtbzwvdGl0bGU+XG4gICAgPHNjcmlwdCB0eXBlPVwibW9kdWxlXCIgc3JjPVwiL3NyYy9tYWluLmpzeFwiPjwvc2NyaXB0PlxuICA8L2hlYWQ+XG4gIDxib2R5IGNsYXNzPVwiaC1mdWxsIGZsZXggZmxleC1jb2xcIj5cbiAgICA8ZGl2IGlkPVwicm9vdFwiIGNsYXNzPVwiZmxleC0xIGZsZXggZmxleC1jb2xcIj48L2Rpdj5cbiAgPC9ib2R5PlxuPC9odG1sPiJ9LHsibmFtZSI6InNyYy9tYWluLmpzeCIsImNvbnRlbnQiOiJpbXBvcnQgUmVhY3QgZnJvbSBcInJlYWN0XCI7XG5pbXBvcnQgeyBjcmVhdGVSb290IH0gZnJvbSBcInJlYWN0LWRvbS9jbGllbnRcIjtcbmltcG9ydCBBcHAgZnJvbSBcIi4vQXBwLmpzeFwiO1xuaW1wb3J0IFwiLi9zdHlsZXMvZ2xvYmFscy5jc3NcIjtcblxuY3JlYXRlUm9vdChkb2N1bWVudC5nZXRFbGVtZW50QnlJZChcInJvb3RcIikpLnJlbmRlcihcbiAgPFJlYWN0LlN0cmljdE1vZGU+XG4gICAgPEFwcCAvPlxuICA8L1JlYWN0LlN0cmljdE1vZGU+XG4pOyJ9LHsibmFtZSI6InNyYy9BcHAuanN4IiwiY29udGVudCI6ImltcG9ydCBSZWFjdCwgeyB1c2VTdGF0ZSB9IGZyb20gXCJyZWFjdFwiO1xuaW1wb3J0IHsgQnJvd3NlclJvdXRlciBhcyBSb3V0ZXIgfSBmcm9tIFwicmVhY3Qtcm91dGVyLWRvbVwiO1xuaW1wb3J0IEFwcExheW91dCBmcm9tIFwiLi9sYXlvdXRzL0FwcExheW91dC5qc3hcIjtcbmltcG9ydCB7IEFwcENvbnRleHRQcm92aWRlciB9IGZyb20gXCIuL2NvbnRleHQvQXBwQ29udGV4dC5qc3hcIjtcblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gQXBwKCkge1xuICBjb25zdCBbYWN0aXZlUGFnZSwgc2V0QWN0aXZlUGFnZV0gPSB1c2VTdGF0ZShcImNoYXRcIik7IC8vICdjaGF0JyB8ICdzZXR0aW5ncydcbiAgY29uc3QgW3Nob3dNb2RhbCwgc2V0U2hvd01vZGFsXSA9IHVzZVN0YXRlKGZhbHNlKTtcblxuICByZXR1cm4gKFxuICAgIDxSb3V0ZXI+XG4gICAgICA8QXBwQ29udGV4dFByb3ZpZGVyPlxuICAgICAgICA8QXBwTGF5b3V0XG4gICAgICAgICAgYWN0aXZlUGFnZT17YWN0aXZlUGFnZX1cbiAgICAgICAgICBzZXRBY3RpdmVQYWdlPXtzZXRBY3RpdmVQYWdlfVxuICAgICAgICAgIHNob3dNb2RhbD17c2hvd01vZGFsfVxuICAgICAgICAgIHNldFNob3dNb2RhbD17c2V0U2hvd01vZGFsfVxuICAgICAgICAvPlxuICAgICAgPC9BcHBDb250ZXh0UHJvdmlkZXI+XG4gICAgPC9Sb3V0ZXI+XG4gICk7XG59In0seyJuYW1lIjoic3JjL2xheW91dHMvQXBwTGF5b3V0LmpzeCIsImNvbnRlbnQiOiJpbXBvcnQgUmVhY3QgZnJvbSBcInJlYWN0XCI7XG5pbXBvcnQgTmF2YmFyIGZyb20gXCIuL05hdmJhci5qc3hcIjtcbmltcG9ydCBGb290ZXIgZnJvbSBcIi4vRm9vdGVyLmpzeFwiO1xuaW1wb3J0IENoYXRWaWV3IGZyb20gXCIuLi92aWV3cy9DaGF0Vmlldy5qc3hcIjtcbmltcG9ydCBTZXR0aW5nc1ZpZXcgZnJvbSBcIi4uL3ZpZXdzL1NldHRpbmdzVmlldy5qc3hcIjtcblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gQXBwTGF5b3V0KHtcbiAgYWN0aXZlUGFnZSxcbiAgc2V0QWN0aXZlUGFnZSxcbiAgc2hvd01vZGFsLFxuICBzZXRTaG93TW9kYWwsXG59KSB7XG4gIHJldHVybiAoXG4gICAgPGRpdiBjbGFzc05hbWU9XCJmbGV4IGZsZXgtY29sIG1pbi1oLXNjcmVlbiBiZy16aW5jLTk1MCB0ZXh0LXppbmMtMTAwXCI+XG4gICAgICA8TmF2YmFyIGFjdGl2ZVBhZ2U9e2FjdGl2ZVBhZ2V9IHNldEFjdGl2ZVBhZ2U9e3NldEFjdGl2ZVBhZ2V9IC8+XG4gICAgICA8bWFpbiBjbGFzc05hbWU9XCJmbGV4LTEgY29udGFpbmVyIG14LWF1dG8gcHgtNCBweS04XCI+XG4gICAgICAgIHthY3RpdmVQYWdlID09PSBcImNoYXRcIiAmJiA8Q2hhdFZpZXcgLz59XG4gICAgICAgIHthY3RpdmVQYWdlID09PSBcInNldHRpbmdzXCIgJiYgPFNldHRpbmdzVmlldyAvPn1cbiAgICAgIDwvbWFpbj5cbiAgICAgIDxGb290ZXIgLz5cbiAgICA8L2Rpdj5cbiAgKTtcbn0ifSx7Im5hbWUiOiJzcmMvbGF5b3V0cy9OYXZiYXIuanN4IiwiY29udGVudCI6ImltcG9ydCBSZWFjdCBmcm9tIFwicmVhY3RcIjtcbmltcG9ydCB7IEhvbWUsIFNldHRpbmdzLCBCb3QgfSBmcm9tIFwibHVjaWRlLXJlYWN0XCI7XG5pbXBvcnQgY2xzeCBmcm9tIFwiY2xzeFwiO1xuXG5leHBvcnQgZGVmYXVsdCBmdW5jdGlvbiBOYXZiYXIoeyBhY3RpdmVQYWdlLCBzZXRBY3RpdmVQYWdlIH0pIHtcbiAgY29uc3QgbmF2SXRlbXMgPSBbXG4gICAgeyBpZDogXCJjaGF0XCIsIGxhYmVsOiBcIlNvaGJldFwiLCBpY29uOiA8Qm90IHNpemU9ezIwfSAvPiB9LFxuICAgIHsgaWQ6IFwic2V0dGluZ3NcIiwgbGFiZWw6IFwiQXlhcmxhclwiLCBpY29uOiA8U2V0dGluZ3Mgc2l6ZT17MjB9IC8+IH0sXG4gIF07XG5cbiAgcmV0dXJuIChcbiAgICA8aGVhZGVyIGNsYXNzTmFtZT1cImJnLXppbmMtOTAwLzgwIGJvcmRlci1iIGJvcmRlci16aW5jLTgwMCBiYWNrZHJvcC1ibHVyLXhsXCI+XG4gICAgICA8bmF2IGNsYXNzTmFtZT1cImNvbnRhaW5lciBteC1hdXRvIGZsZXggaXRlbXMtY2VudGVyIGp1c3RpZnktYmV0d2VlbiBweS00IHB4LTRcIj5cbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJmbGV4IGl0ZW1zLWNlbnRlciBnYXAtMyB0ZXh0LXhsIGZvbnQtYm9sZCB0ZXh0LXdoaXRlXCI+XG4gICAgICAgICAgPEhvbWUgY2xhc3NOYW1lPVwidGV4dC1pbmRpZ28tNDAwXCIgc2l6ZT17Mjh9IC8+XG4gICAgICAgICAgPHNwYW4+Q2hhdEJvdCBEZW1vPC9zcGFuPlxuICAgICAgICA8L2Rpdj5cbiAgICAgICAgPHVsIGNsYXNzTmFtZT1cImZsZXggZ2FwLTZcIj5cbiAgICAgICAgICB7bmF2SXRlbXMubWFwKChpdGVtKSA9PiAoXG4gICAgICAgICAgICA8bGkga2V5PXtpdGVtLmlkfT5cbiAgICAgICAgICAgICAgPGJ1dHRvblxuICAgICAgICAgICAgICAgIG9uQ2xpY2s9eygpID0+IHNldEFjdGl2ZVBhZ2UoaXRlbS5pZCl9XG4gICAgICAgICAgICAgICAgY2xhc3NOYW1lPXtjbHN4KFxuICAgICAgICAgICAgICAgICAgXCJmbGV4IGl0ZW1zLWNlbnRlciBnYXAtMiBweC0zIHB5LTEgcm91bmRlZC1tZCB0cmFuc2l0aW9uLWNvbG9yc1wiLFxuICAgICAgICAgICAgICAgICAgYWN0aXZlUGFnZSA9PT0gaXRlbS5pZFxuICAgICAgICAgICAgICAgICAgICA/IFwiYmctaW5kaWdvLTYwMC8zMCB0ZXh0LWluZGlnby0yMDBcIlxuICAgICAgICAgICAgICAgICAgICA6IFwidGV4dC16aW5jLTQwMCBob3ZlcjpiZy16aW5jLTgwMC81MFwiXG4gICAgICAgICAgICAgICAgKX1cbiAgICAgICAgICAgICAgPlxuICAgICAgICAgICAgICAgIHtpdGVtLmljb259XG4gICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPVwiZm9udC1tZWRpdW1cIj57aXRlbS5sYWJlbH08L3NwYW4+XG4gICAgICAgICAgICAgIDwvYnV0dG9uPlxuICAgICAgICAgICAgPC9saT5cbiAgICAgICAgICApKX1cbiAgICAgICAgPC91bD5cbiAgICAgIDwvbmF2PlxuICAgIDwvaGVhZGVyPlxuICApO1xufSJ9LHsibmFtZSI6InNyYy9sYXlvdXRzL0Zvb3Rlci5qc3giLCJjb250ZW50IjoiaW1wb3J0IFJlYWN0IGZyb20gXCJyZWFjdFwiO1xuXG5leHBvcnQgZGVmYXVsdCBmdW5jdGlvbiBGb290ZXIoKSB7XG4gIHJldHVybiAoXG4gICAgPGZvb3RlciBjbGFzc05hbWU9XCJiZy16aW5jLTkwMC84MCBib3JkZXItdCBib3JkZXItemluYy04MDAgdGV4dC1jZW50ZXIgcHktNCB0ZXh0LXNtIHRleHQtemluYy01MDBcIj5cbiAgICAgIMKpIHtuZXcgRGF0ZSgpLmdldEZ1bGxZZWFyKCl9IDIxc3QuZGV2IFN0aWxpbmRlIEdlcsOnZWvigJFaYW1hbmzEsSBTb2hiZXQgQm90dVxuICAgIDwvZm9vdGVyPlxuICApO1xufSJ9LHsibmFtZSI6InNyYy92aWV3cy9DaGF0Vmlldy5qc3giLCJjb250ZW50IjoiaW1wb3J0IFJlYWN0IGZyb20gXCJyZWFjdFwiO1xuaW1wb3J0IHsgdXNlQ2hhdCB9IGZyb20gXCIuLi9ob29rcy91c2VDaGF0LmpzXCI7XG5pbXBvcnQgQ2hhdE1lc3NhZ2UgZnJvbSBcIi4uL2NvbXBvbmVudHMvQ2hhdE1lc3NhZ2UuanN4XCI7XG5pbXBvcnQgTWVzc2FnZUlucHV0IGZyb20gXCIuLi9jb21wb25lbnRzL01lc3NhZ2VJbnB1dC5qc3hcIjtcbmltcG9ydCB7IG1vdGlvbiwgQW5pbWF0ZVByZXNlbmNlIH0gZnJvbSBcImZyYW1lci1tb3Rpb25cIjtcblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gQ2hhdFZpZXcoKSB7XG4gIGNvbnN0IHsgbWVzc2FnZXMsIHNlbmRNZXNzYWdlLCBpc0JvdFR5cGluZyB9ID0gdXNlQ2hhdCgpO1xuXG4gIHJldHVybiAoXG4gICAgPHNlY3Rpb24gY2xhc3NOYW1lPVwiZmxleCBmbGV4LWNvbCBoLWZ1bGwgbWF4LXctM3hsIG14LWF1dG9cIj5cbiAgICAgIDxoMSBjbGFzc05hbWU9XCJ0ZXh0LTJ4bCBmb250LWJvbGQgbWItNCB0ZXh0LXdoaXRlXCI+8J+XqO+4jyBHZXLDp2Vr4oCRWmFtYW5sxLEgU29oYmV0PC9oMT5cblxuICAgICAgPGRpdiBjbGFzc05hbWU9XCJmbGV4LTEgb3ZlcmZsb3cteS1hdXRvIHNwYWNlLXktNCBwLTQgYmctemluYy05MDAvNjAgcm91bmRlZC14bCBib3JkZXIgYm9yZGVyLXdoaXRlLzEwIGJhY2tkcm9wLWJsdXItbWQgbWItNFwiPlxuICAgICAgICA8QW5pbWF0ZVByZXNlbmNlIGluaXRpYWw9e2ZhbHNlfT5cbiAgICAgICAgICB7bWVzc2FnZXMubWFwKChtc2cpID0+IChcbiAgICAgICAgICAgIDxtb3Rpb24uZGl2XG4gICAgICAgICAgICAgIGtleT17bXNnLmlkfVxuICAgICAgICAgICAgICBpbml0aWFsPXt7IG9wYWNpdHk6IDAsIHk6IDEwIH19XG4gICAgICAgICAgICAgIGFuaW1hdGU9e3sgb3BhY2l0eTogMSwgeTogMCB9fVxuICAgICAgICAgICAgICBleGl0PXt7IG9wYWNpdHk6IDAgfX1cbiAgICAgICAgICAgID5cbiAgICAgICAgICAgICAgPENoYXRNZXNzYWdlIHsuLi5tc2d9IC8+XG4gICAgICAgICAgICA8L21vdGlvbi5kaXY+XG4gICAgICAgICAgKSl9XG4gICAgICAgIDwvQW5pbWF0ZVByZXNlbmNlPlxuICAgICAgICB7aXNCb3RUeXBpbmcgJiYgKFxuICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZmxleCBpdGVtcy1jZW50ZXIgZ2FwLTIgdGV4dC16aW5jLTQwMCBhbmltYXRlLXB1bHNlXCI+XG4gICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9XCJ3LTIgaC0yIGJnLWluZGlnby01MDAgcm91bmRlZC1mdWxsXCIgLz5cbiAgICAgICAgICAgIEJvdCB5YW7EsXQgb2x1xZ90dXJ1eW9yLi4uXG4gICAgICAgICAgPC9kaXY+XG4gICAgICAgICl9XG4gICAgICA8L2Rpdj5cblxuICAgICAgPE1lc3NhZ2VJbnB1dCBvblNlbmQ9e3NlbmRNZXNzYWdlfSAvPlxuICAgIDwvc2VjdGlvbj5cbiAgKTtcbn0ifSx7Im5hbWUiOiJzcmMvdmlld3MvU2V0dGluZ3NWaWV3LmpzeCIsImNvbnRlbnQiOiJpbXBvcnQgUmVhY3QgZnJvbSBcInJlYWN0XCI7XG5pbXBvcnQgeyBUaGVtZUNvbnRleHQgfSBmcm9tIFwiLi4vY29udGV4dC9BcHBDb250ZXh0LmpzeFwiO1xuaW1wb3J0IHsgU3VuLCBNb29uIH0gZnJvbSBcImx1Y2lkZS1yZWFjdFwiO1xuXG5leHBvcnQgZGVmYXVsdCBmdW5jdGlvbiBTZXR0aW5nc1ZpZXcoKSB7XG4gIGNvbnN0IHsgdGhlbWUsIHRvZ2dsZVRoZW1lIH0gPSBSZWFjdC51c2VDb250ZXh0KFRoZW1lQ29udGV4dCk7XG5cbiAgcmV0dXJuIChcbiAgICA8c2VjdGlvbiBjbGFzc05hbWU9XCJtYXgtdy0yeGwgbXgtYXV0b1wiPlxuICAgICAgPGgxIGNsYXNzTmFtZT1cInRleHQtMnhsIGZvbnQtYm9sZCBtYi02IHRleHQtd2hpdGVcIj7impnvuI8gQXlhcmxhcjwvaDE+XG5cbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZmxleCBpdGVtcy1jZW50ZXIgZ2FwLTQgcC00IGJnLXppbmMtOTAwLzYwIHJvdW5kZWQteGwgYm9yZGVyIGJvcmRlci13aGl0ZS8xMCBiYWNrZHJvcC1ibHVyLW1kXCI+XG4gICAgICAgIDxidXR0b25cbiAgICAgICAgICBvbkNsaWNrPXt0b2dnbGVUaGVtZX1cbiAgICAgICAgICBjbGFzc05hbWU9XCJmbGV4IGl0ZW1zLWNlbnRlciBnYXAtMiB0ZXh0LXppbmMtMzAwIGhvdmVyOnRleHQtd2hpdGUgdHJhbnNpdGlvbi1jb2xvcnNcIlxuICAgICAgICA+XG4gICAgICAgICAge3RoZW1lID09PSBcImRhcmtcIiA/IDxNb29uIHNpemU9ezIwfSAvPiA6IDxTdW4gc2l6ZT17MjB9IC8+fVxuICAgICAgICAgIDxzcGFuPnt0aGVtZSA9PT0gXCJkYXJrXCIgPyBcIktveXUgVGVtYVwiIDogXCJBw6fEsWsgVGVtYVwifTwvc3Bhbj5cbiAgICAgICAgPC9idXR0b24+XG4gICAgICA8L2Rpdj5cbiAgICA8L3NlY3Rpb24+XG4gICk7XG59In0seyJuYW1lIjoic3JjL2NvbXBvbmVudHMvQ2hhdE1lc3NhZ2UuanN4IiwiY29udGVudCI6ImltcG9ydCBSZWFjdCBmcm9tIFwicmVhY3RcIjtcbmltcG9ydCB7IEJvdCwgVXNlciB9IGZyb20gXCJsdWNpZGUtcmVhY3RcIjtcbmltcG9ydCBjbHN4IGZyb20gXCJjbHN4XCI7XG5cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIENoYXRNZXNzYWdlKHsgaWQsIHJvbGUsIGNvbnRlbnQgfSkge1xuICBjb25zdCBpc1VzZXIgPSByb2xlID09PSBcInVzZXJcIjtcblxuICByZXR1cm4gKFxuICAgIDxkaXZcbiAgICAgIGNsYXNzTmFtZT17Y2xzeChcbiAgICAgICAgXCJmbGV4IGdhcC0zXCIsXG4gICAgICAgIGlzVXNlciA/IFwianVzdGlmeS1lbmRcIiA6IFwianVzdGlmeS1zdGFydFwiXG4gICAgICApfVxuICAgID5cbiAgICAgIDxkaXYgY2xhc3NOYW1lPXtjbHN4KFwiZmxleC1zaHJpbmstMFwiLCBpc1VzZXIgPyBcIm9yZGVyLTJcIiA6IFwib3JkZXItMVwiKX0+XG4gICAgICAgIHtpc1VzZXIgPyAoXG4gICAgICAgICAgPFVzZXIgY2xhc3NOYW1lPVwidGV4dC1pbmRpZ28tNDAwXCIgc2l6ZT17MjR9IC8+XG4gICAgICAgICkgOiAoXG4gICAgICAgICAgPEJvdCBjbGFzc05hbWU9XCJ0ZXh0LWVtZXJhbGQtNDAwXCIgc2l6ZT17MjR9IC8+XG4gICAgICAgICl9XG4gICAgICA8L2Rpdj5cblxuICAgICAgPGRpdlxuICAgICAgICBjbGFzc05hbWU9e2Nsc3goXG4gICAgICAgICAgXCJtYXgtdy1bNzAlXSByb3VuZGVkLXhsIHAtMyB0ZXh0LXNtXCIsXG4gICAgICAgICAgaXNVc2VyXG4gICAgICAgICAgICA/IFwiYmctaW5kaWdvLTYwMC83MCB0ZXh0LXdoaXRlXCJcbiAgICAgICAgICAgIDogXCJiZy16aW5jLTgwMC83MCB0ZXh0LXppbmMtMjAwXCJcbiAgICAgICAgKX1cbiAgICAgID5cbiAgICAgICAge2NvbnRlbnR9XG4gICAgICA8L2Rpdj5cbiAgICA8L2Rpdj5cbiAgKTtcbn0ifSx7Im5hbWUiOiJzcmMvY29tcG9uZW50cy9NZXNzYWdlSW5wdXQuanN4IiwiY29udGVudCI6ImltcG9ydCBSZWFjdCwgeyB1c2VTdGF0ZSB9IGZyb20gXCJyZWFjdFwiO1xuaW1wb3J0IHsgU2VuZCB9IGZyb20gXCJsdWNpZGUtcmVhY3RcIjtcblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gTWVzc2FnZUlucHV0KHsgb25TZW5kIH0pIHtcbiAgY29uc3QgW3RleHQsIHNldFRleHRdID0gdXNlU3RhdGUoXCJcIik7XG5cbiAgY29uc3QgaGFuZGxlU3VibWl0ID0gKGUpID0+IHtcbiAgICBlLnByZXZlbnREZWZhdWx0KCk7XG4gICAgaWYgKCF0ZXh0LnRyaW0oKSkgcmV0dXJuO1xuICAgIG9uU2VuZCh0ZXh0LnRyaW0oKSk7XG4gICAgc2V0VGV4dChcIlwiKTtcbiAgfTtcblxuICByZXR1cm4gKFxuICAgIDxmb3JtIG9uU3VibWl0PXtoYW5kbGVTdWJtaXR9IGNsYXNzTmFtZT1cImZsZXggZ2FwLTJcIj5cbiAgICAgIDxpbnB1dFxuICAgICAgICB0eXBlPVwidGV4dFwiXG4gICAgICAgIHBsYWNlaG9sZGVyPVwiTWVzYWrEsW7EsXrEsSB5YXrEsW4uLi5cIlxuICAgICAgICBjbGFzc05hbWU9XCJmbGV4LTEgcm91bmRlZC14bCBiZy16aW5jLTgwMC82MCBib3JkZXIgYm9yZGVyLXdoaXRlLzEwIHB4LTQgcHktMi41IHRleHQtd2hpdGUgcGxhY2Vob2xkZXItemluYy01MDAgZm9jdXM6b3V0bGluZS1ub25lIGZvY3VzOmJvcmRlci1pbmRpZ28tNTAwXCJcbiAgICAgICAgdmFsdWU9e3RleHR9XG4gICAgICAgIG9uQ2hhbmdlPXsoZSkgPT4gc2V0VGV4dChlLnRhcmdldC52YWx1ZSl9XG4gICAgICAvPlxuICAgICAgPGJ1dHRvblxuICAgICAgICB0eXBlPVwic3VibWl0XCJcbiAgICAgICAgY2xhc3NOYW1lPVwiZmxleCBpdGVtcy1jZW50ZXIgZ2FwLTEgcm91bmRlZC14bCBiZy1pbmRpZ28tNjAwIGhvdmVyOmJnLWluZGlnby01MDAgcHgtNCBweS0yLjUgdGV4dC13aGl0ZSB0cmFuc2l0aW9uLWNvbG9yc1wiXG4gICAgICA+XG4gICAgICAgIDxTZW5kIHNpemU9ezE4fSAvPlxuICAgICAgICBHw7ZuZGVyXG4gICAgICA8L2J1dHRvbj5cbiAgICA8L2Zvcm0+XG4gICk7XG59In0seyJuYW1lIjoic3JjL2NvbXBvbmVudHMvU3RhdHVzQmFkZ2UuanN4IiwiY29udGVudCI6ImltcG9ydCBSZWFjdCBmcm9tIFwicmVhY3RcIjtcbmltcG9ydCBjbHN4IGZyb20gXCJjbHN4XCI7XG5cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIFN0YXR1c0JhZGdlKHsgc3RhdHVzIH0pIHtcbiAgY29uc3QgY29sb3JzID0ge1xuICAgIG9ubGluZTogXCJiZy1lbWVyYWxkLTUwMC8yMCB0ZXh0LWVtZXJhbGQtNDAwIGJvcmRlci1lbWVyYWxkLTQwMFwiLFxuICAgIG9mZmxpbmU6IFwiYmctemluYy03MDAvMzAgdGV4dC16aW5jLTQwMCBib3JkZXItemluYy02MDBcIixcbiAgICBidXN5OiBcImJnLWFtYmVyLTUwMC8yMCB0ZXh0LWFtYmVyLTQwMCBib3JkZXItYW1iZXItNDAwXCIsXG4gIH07XG5cbiAgcmV0dXJuIChcbiAgICA8c3BhblxuICAgICAgY2xhc3NOYW1lPXtjbHN4KFxuICAgICAgICBcImlubGluZS1mbGV4IGl0ZW1zLWNlbnRlciBnYXAtMS41IHJvdW5kZWQtZnVsbCBib3JkZXIgcHgtMi41IHB5LTAuNSB0ZXh0LXhzIGZvbnQtbWVkaXVtXCIsXG4gICAgICAgIGNvbG9yc1tzdGF0dXNdIHx8IGNvbG9ycy5vZmZsaW5lXG4gICAgICApfVxuICAgID5cbiAgICAgIHtzdGF0dXN9XG4gICAgPC9zcGFuPlxuICApO1xufSJ9LHsibmFtZSI6InNyYy9ob29rcy91c2VDaGF0LmpzIiwiY29udGVudCI6ImltcG9ydCB7IHVzZVN0YXRlLCB1c2VFZmZlY3QsIHVzZVJlZiB9IGZyb20gXCJyZWFjdFwiO1xuaW1wb3J0IHsgbW9ja1Jlc3BvbnNlcyB9IGZyb20gXCIuLi9kYXRhL21vY2tSZXNwb25zZXMuanNcIjtcblxubGV0IG1lc3NhZ2VJZCA9IDA7XG5cbmV4cG9ydCBmdW5jdGlvbiB1c2VDaGF0KCkge1xuICBjb25zdCBbbWVzc2FnZXMsIHNldE1lc3NhZ2VzXSA9IHVzZVN0YXRlKFtdKTtcbiAgY29uc3QgW2lzQm90VHlwaW5nLCBzZXRJc0JvdFR5cGluZ10gPSB1c2VTdGF0ZShmYWxzZSk7XG4gIGNvbnN0IHJlc3BvbnNlSW5kZXggPSB1c2VSZWYoMCk7XG5cbiAgY29uc3QgYWRkTWVzc2FnZSA9IChyb2xlLCBjb250ZW50KSA9PiB7XG4gICAgc2V0TWVzc2FnZXMoKHByZXYpID0+IFtcbiAgICAgIC4uLnByZXYsXG4gICAgICB7IGlkOiArK21lc3NhZ2VJZCwgcm9sZSwgY29udGVudCB9XG4gICAgXSk7XG4gIH07XG5cbiAgY29uc3Qgc2VuZE1lc3NhZ2UgPSAodXNlclRleHQpID0+IHtcbiAgICBhZGRNZXNzYWdlKFwidXNlclwiLCB1c2VyVGV4dCk7XG4gICAgc2V0SXNCb3RUeXBpbmcodHJ1ZSk7XG4gIH07XG5cbiAgLy8gU2ltdWxhdGUgYm90IHJlc3BvbnNlIGFmdGVyIGEgc2hvcnQgZGVsYXlcbiAgdXNlRWZmZWN0KCgpID0+IHtcbiAgICBpZiAoIWlzQm90VHlwaW5nKSByZXR1cm47XG5cbiAgICBjb25zdCB0aW1lciA9IHNldFRpbWVvdXQoKCkgPT4ge1xuICAgICAgY29uc3QgYm90UmVwbHkgPVxuICAgICAgICBtb2NrUmVzcG9uc2VzW3Jlc3BvbnNlSW5kZXguY3VycmVudCAlIG1vY2tSZXNwb25zZXMubGVuZ3RoXTtcbiAgICAgIHJlc3BvbnNlSW5kZXguY3VycmVudCArPSAxO1xuICAgICAgYWRkTWVzc2FnZShcImJvdFwiLCBib3RSZXBseSk7XG4gICAgICBzZXRJc0JvdFR5cGluZyhmYWxzZSk7XG4gICAgfSwgMTIwMCArIE1hdGgucmFuZG9tKCkgKiA4MDApO1xuXG4gICAgcmV0dXJuICgpID0+IGNsZWFyVGltZW91dCh0aW1lcik7XG4gIH0sIFtpc0JvdFR5cGluZ10pO1xuXG4gIHJldHVybiB7IG1lc3NhZ2VzLCBzZW5kTWVzc2FnZSwgaXNCb3RUeXBpbmcgfTtcbn0ifSx7Im5hbWUiOiJzcmMvY29udGV4dC9BcHBDb250ZXh0LmpzeCIsImNvbnRlbnQiOiJpbXBvcnQgUmVhY3QsIHsgY3JlYXRlQ29udGV4dCwgdXNlU3RhdGUsIHVzZUVmZmVjdCB9IGZyb20gXCJyZWFjdFwiO1xuXG5leHBvcnQgY29uc3QgVGhlbWVDb250ZXh0ID0gY3JlYXRlQ29udGV4dCh7XG4gIHRoZW1lOiBcImRhcmtcIixcbiAgdG9nZ2xlVGhlbWU6ICgpID0+IHt9XG59KTtcblxuZXhwb3J0IGZ1bmN0aW9uIEFwcENvbnRleHRQcm92aWRlcih7IGNoaWxkcmVuIH0pIHtcbiAgY29uc3QgW3RoZW1lLCBzZXRUaGVtZV0gPSB1c2VTdGF0ZShcImRhcmtcIik7XG5cbiAgdXNlRWZmZWN0KCgpID0+IHtcbiAgICBkb2N1bWVudC5kb2N1bWVudEVsZW1lbnQuY2xhc3NMaXN0LnRvZ2dsZShcImRhcmtcIiwgdGhlbWUgPT09IFwiZGFya1wiKTtcbiAgfSwgW3RoZW1lXSk7XG5cbiAgY29uc3QgdG9nZ2xlVGhlbWUgPSAoKSA9PiB7XG4gICAgc2V0VGhlbWUoKHByZXYpID0+IChwcmV2ID09PSBcImRhcmtcIiA/IFwibGlnaHRcIiA6IFwiZGFya1wiKSk7XG4gIH07XG5cbiAgcmV0dXJuIChcbiAgICA8VGhlbWVDb250ZXh0LlByb3ZpZGVyIHZhbHVlPXt7IHRoZW1lLCB0b2dnbGVUaGVtZSB9fT5cbiAgICAgIHtjaGlsZHJlbn1cbiAgICA8L1RoZW1lQ29udGV4dC5Qcm92aWRlcj5cbiAgKTtcbn0ifSx7Im5hbWUiOiJzcmMvZGF0YS9tb2NrUmVzcG9uc2VzLmpzIiwiY29udGVudCI6ImV4cG9ydCBjb25zdCBtb2NrUmVzcG9uc2VzID0gW1xuICBcIk1lcmhhYmEhIFNpemUgbmFzxLFsIHlhcmTEsW1jxLEgb2xhYmlsaXJpbT9cIixcbiAgXCLFnnUgYW5kYSBlbiBwb3DDvGxlciBoYWJlcmxlcjogeWFwYXkgemVrYSwgdXpheSBrZcWfaWZsZXJpIHZlIHPDvHJkw7xyw7xsZWJpbGlyIGVuZXJqaS5cIixcbiAgXCLDlm5lcmRpxJ9pbml6IGtvbnUgaGFra8SxbmRhIGRhaGEgZmF6bGEgZGV0YXkgdmVyaXJzZW5peiBkYWhhIGl5aSB5YW7EsXQgdmVyZWJpbGlyaW0uXCIsXG4gIFwiw5x6Z8O8bsO8bSwgYnUga29udWRhIHlldGVybGkgYmlsZ2l5ZSBzYWhpcCBkZcSfaWxpbS4gQmHFn2thIGJpciDFn2V5IHNvcmFiaWxpciBtaXNpbml6P1wiLFxuICBcIkhhcmlrYSEgQmHFn2thIGJpciBzb3J1bnV6IHZhcnNhIMOnZWtpbm1lZGVuIHNvcnVuLlwiXG5dOyJ9LHsibmFtZSI6InNyYy9zdHlsZXMvZ2xvYmFscy5jc3MiLCJjb250ZW50IjoiQHRhaWx3aW5kIGJhc2U7XG5AdGFpbHdpbmQgY29tcG9uZW50cztcbkB0YWlsd2luZCB1dGlsaXRpZXM7XG5cbi8qIEN1c3RvbSBzY3JvbGxiYXIgZm9yIGRhcmsgdGhlbWUgKi9cbjo6LXdlYmtpdC1zY3JvbGxiYXIge1xuICB3aWR0aDogOHB4O1xuICBoZWlnaHQ6IDhweDtcbn1cbjo6LXdlYmtpdC1zY3JvbGxiYXItdHJhY2sge1xuICBiYWNrZ3JvdW5kOiB0cmFuc3BhcmVudDtcbn1cbjo6LXdlYmtpdC1zY3JvbGxiYXItdGh1bWIge1xuICBiYWNrZ3JvdW5kLWNvbG9yOiByZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMTUpO1xuICBib3JkZXItcmFkaXVzOiA0cHg7XG59XG5cbi8qIEdsYXNzbW9ycGhpc20gdXRpbGl0eSAqL1xuLmJnLWdsYXNzIHtcbiAgQGFwcGx5IGJnLXppbmMtOTAwLzYwIGJvcmRlciBib3JkZXItd2hpdGUvMTAgYmFja2Ryb3AtYmx1ci14bDtcbn1cblxuLyogRGFyayBtb2RlIHJvb3QgKi9cbmh0bWwuZGFyayB7XG4gIGNvbG9yLXNjaGVtZTogZGFyaztcbn0ifV0=</script>
+
+  <script>
+    (function() {
+      window._extends = Object.assign || function(target) {
+        for (var i = 1; i < arguments.length; i++) {
+          var source = arguments[i];
+          for (var key in source) {
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
+              target[key] = source[key];
+            }
+          }
+        }
+        return target;
+      };
+      window._interopRequireDefault = function(obj) {
+        if (obj === null || typeof obj === 'undefined') return { default: obj };
+        if (obj.__esModule) return obj;
+        if (typeof obj === 'function') {
+          try { if (!obj.default) obj.default = obj; } catch (e) {}
+          return obj;
+        }
+        if (typeof obj === 'object' && typeof obj.default !== 'undefined') {
+          obj.__esModule = true;
+          return obj;
+        }
+        return { default: obj };
+      };
+      window._interopRequireWildcard = function(obj) {
+        if (obj && obj.__esModule) return obj;
+        var newObj = {};
+        if (obj != null) {
+          for (var key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];
+          }
+        }
+        newObj.default = obj;
+        newObj.__esModule = true;
+        return newObj;
+      };
+      window._toConsumableArray = function(arr) {
+        return Array.isArray(arr) ? arr.slice() : Array.from(arr || []);
+      };
+      window._slicedToArray = function(arr, i) {
+        return Array.isArray(arr) ? arr.slice(0, i) : Array.from(arr || []).slice(0, i);
+      };
+      window._defineProperty = function(obj, key, value) {
+        if (key in obj) {
+          Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });
+        } else {
+          obj[key] = value;
+        }
+        return obj;
+      };
+
+      var currentErrorContext = {
+        type: 'runtime',
+        message: '',
+        fileName: '',
+      };
+
+      function displayError(type, title, msg, fileName) {
+        currentErrorContext = {
+          type: type || 'runtime',
+          message: String(msg),
+          fileName: fileName || '',
+        };
+        var loader = document.getElementById('__pwnai_loader');
+        if (loader) loader.style.display = 'none';
+        var overlay = document.getElementById('__err_overlay');
+        var titleEl = document.getElementById('__err_title');
+        var textEl = document.getElementById('__err_text');
+        if (overlay && textEl) {
+          if (titleEl) titleEl.textContent = title || 'Önizleme Hatası';
+          textEl.textContent = currentErrorContext.message;
+          overlay.style.display = 'flex';
+        }
+      }
+
+      document.getElementById('__err_retry_btn').addEventListener('click', function() {
+        var overlay = document.getElementById('__err_overlay');
+        if (overlay) overlay.style.display = 'none';
+        window.parent.postMessage({ type: 'PWNAI_PREVIEW_READY' }, '*');
+      });
+
+      document.getElementById('__err_fix_btn').addEventListener('click', function() {
+        window.parent.postMessage({
+          type: 'PWNAI_FIX_ERROR',
+          errorType: currentErrorContext.type,
+          error: currentErrorContext.message,
+          fileName: currentErrorContext.fileName
+        }, '*');
+      });
+
+      window.onerror = function(m, s, l, c, e) {
+        displayError('runtime', 'Çalışma Zamanı Hatası', (e && e.stack) || m);
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        displayError('runtime', 'Promise Hatası', e.reason);
+      });
+
+      // Wait for dependencies (React, ReactDOM, Babel) to load from CDN
+      function waitForDependencies(callback, maxAttempts) {
+        var attempts = 0;
+        var max = maxAttempts || 50;
+        function check() {
+          attempts++;
+          if (window.React && window.ReactDOM && window.Babel) {
+            callback();
+          } else if (attempts < max) {
+            setTimeout(check, 40);
+          } else {
+            console.warn('[PWNAI-IFRAME] CDN load timeout, attempting fallback execution');
+            callback();
+          }
+        }
+        check();
+      }
+
+      // Real SVG Path Dictionary for Lucide Icons
+      var ICON_PATHS = {
+        Sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/>',
+        Search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+        Code: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+        Terminal: '<polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/>',
+        Check: '<polyline points="20 6 9 17 4 12"/>',
+        CheckCircle: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+        CheckSquare: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+        Star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+        Heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+        Shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+        ShieldCheck: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+        Zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+        ArrowRight: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+        ArrowLeft: '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
+        ArrowUp: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+        ArrowDown: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
+        ChevronRight: '<path d="m9 18 6-6-6-6"/>',
+        ChevronDown: '<path d="m6 9 6 6 6-6"/>',
+        ChevronLeft: '<path d="m15 18-6-6 6-6"/>',
+        ChevronUp: '<path d="m18 15-6-6-6 6"/>',
+        Menu: '<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>',
+        X: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+        Plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+        Minus: '<path d="M5 12h14"/>',
+        Trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+        Trash2: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
+        User: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+        Users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+        UserPlus: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>',
+        Lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+        Unlock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
+        Mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+        Globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+        Rocket: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>',
+        Layers: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+        Filter: '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
+        SlidersHorizontal: '<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/>',
+        ShoppingCart: '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
+        ShoppingBag: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+        Eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+        EyeOff: '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>',
+        Settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+        RefreshCw: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+        Clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+        TrendingUp: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+        TrendingDown: '<polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/>',
+        BarChart: '<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/>',
+        PieChart: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+        Send: '<line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+        Download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+        Upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+        Home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+        Folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>',
+        File: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><polyline points="14 2 14 8 20 8"/>',
+        FileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/>',
+        Copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+        ExternalLink: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/>',
+        Link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+        Activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+        Bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+        Calendar: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
+        MapPin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+      };
+
+      // Virtual Module System & On-Demand CommonJS / ESM Module Cache
+      var moduleCache = {};
+      var fileMap = {};
+      var hasReceivedFirstRun = false;
+
+      function cleanPath(p) {
+        var str = String(p || '').trim();
+        while (str.indexOf('./') === 0) str = str.substring(2);
+        while (str.indexOf('../') === 0) str = str.substring(3);
+        if (str.indexOf('@/') === 0) str = str.substring(2);
+        if (str.indexOf('src/') === 0) str = str.substring(4);
+        return str;
+      }
+
+      function normalizeModPath(p) {
+        var str = cleanPath(p).toLowerCase();
+        var lastDot = str.lastIndexOf('.');
+        if (lastDot !== -1) {
+          var ext = str.substring(lastDot + 1);
+          if (['jsx', 'tsx', 'js', 'ts', 'json', 'css'].indexOf(ext) !== -1) {
+            str = str.substring(0, lastDot);
+          }
+        }
+        return str;
+      }
+
+      function resolveFileKey(requested, fromFile) {
+        var reqClean = cleanPath(requested);
+        var reqNorm = normalizeModPath(requested);
+
+        // 1. Direct match in fileMap
+        for (var k in fileMap) {
+          if (normalizeModPath(k) === reqNorm) return k;
+        }
+
+        // 2. Relative to fromFile directory
+        if (fromFile) {
+          var fromDir = '';
+          var slashIdx = fromFile.lastIndexOf('/');
+          if (slashIdx !== -1) fromDir = fromFile.substring(0, slashIdx + 1);
+          var relPath = fromDir + reqClean;
+          var relNorm = normalizeModPath(relPath);
+          for (var k2 in fileMap) {
+            if (normalizeModPath(k2) === relNorm) return k2;
+          }
+        }
+
+        // 3. Substring / suffix match
+        for (var k3 in fileMap) {
+          var kNorm = normalizeModPath(k3);
+          if (kNorm.endsWith('/' + reqNorm) || reqNorm.endsWith('/' + kNorm)) {
+            return k3;
+          }
+        }
+        return null;
+      }
+
+      function autoRepairCode(rawCode, filename) {
+        var code = String(rawCode || '').trim();
+        var fname = String(filename || '').toLowerCase();
+
+        // 1. Strip markdown fences if present
+        var triple = String.fromCharCode(96, 96, 96);
+        if (code.indexOf(triple) === 0) {
+          var firstNl = code.indexOf(String.fromCharCode(10));
+          if (firstNl !== -1) code = code.substring(firstNl + 1);
+          if (code.endsWith(triple)) code = code.substring(0, code.length - 3);
+          code = code.trim();
+        }
+
+        // 1b. Ensure import statements always start on a new line (inline, no IIFE)
+        // Fixes: }import React... or )import React... or ;import...
+        var _nbNl = String.fromCharCode(10);
+        var _nbImp = 'import';
+        var _nbI = 0;
+        while (_nbI < code.length - 6) {
+          var _nbCh = code.charAt(_nbI);
+          if ((_nbCh === '}' || _nbCh === ')' || _nbCh === ';') && code.substring(_nbI + 1, _nbI + 7) === _nbImp) {
+            code = code.substring(0, _nbI + 1) + _nbNl + code.substring(_nbI + 1);
+            _nbI += 2;
+          } else {
+            _nbI++;
+          }
+        }
+
+        // 2. Handle raw JSON files
+        if (fname.endsWith('.json') || (code.indexOf('{') === 0 && code.indexOf('export') === -1 && code.indexOf('import') === -1 && code.indexOf('const') === -1 && code.indexOf('function') === -1)) {
+          try {
+            JSON.parse(code);
+            return 'module.exports = ' + code + ';';
+          } catch (_) {}
+        }
+
+        var qChars = "[" + String.fromCharCode(34, 39) + "]";
+        var notQChars = "[^" + String.fromCharCode(34, 39) + "]+";
+        var notBrackets = "[^" + String.fromCharCode(91, 40, 123, 60, 34, 39, 96) + "\\d\\s]";
+
+        // 3. Remove ellipsis imports: import { ... } from './foo';
+        code = code.replace(new RegExp('import\\s*\\{\\s*\\.{2,}\\s*\\}\\s*from\\s*' + qChars + notQChars + qChars + ';?', 'g'), '');
+
+        // 4. Remove comments containing ellipsis
+        code = code.replace(new RegExp('^\\s*//.*$', 'gm'), function(line) {
+          return line.indexOf('...') !== -1 ? '' : line;
+        });
+        code = code.replace(new RegExp('/\\*[\\s\\S]*?\\.\\.\\.[\\s\\S]*?\\*/', 'g'), '');
+
+        // 5. Replace placeholder ellipsis blocks:
+        // function foo() { ... } or () => { ... } -> { return null; }
+        code = code.replace(new RegExp('\\{\\s*\\.{2,}\\s*\\}', 'g'), '{ /* placeholder */ }');
+        // [ ... ] -> []
+        code = code.replace(new RegExp('\\[\\s*\\.{2,}\\s*\\]', 'g'), '[]');
+        // ( ... ) -> ()
+        code = code.replace(new RegExp('\\(\\s*\\.{2,}\\s*\\)', 'g'), '()');
+
+        // 6. Replace placeholder assignments: const a = ...; -> const a = null;
+        code = code.replace(new RegExp('(=\\s*)\\.{2,}\\s*(?=;|\\n|$)', 'g'), '$1null');
+
+        // 7. Clean up bare placeholder ellipsis (not real spread) inside objects/arrays
+        // Remove trailing comma before } ] ) ; e.g. [1, 2, ...] -> [1, 2] but not [...a]
+        code = code.replace(new RegExp(',\\s*\\.{2,}\\s*(?=[,}\\)\\];])', 'g'), '');
+
+        // 8. Remove bare lines with ellipsis (even with trailing comments)
+        code = code.replace(new RegExp('^\\s*\\.{2,}[^.\\n]*$', 'gm'), '');
+
+        // 9. Clean up double/leading/trailing commas caused by removals
+        // [1, , 3] -> [1, 3]  and  {, a: 1} -> {a: 1}  and  {x: 1,} -> {x: 1}
+        code = code.replace(new RegExp(',\\s*,', 'g'), ',');
+        code = code.replace(new RegExp('(\\{)\\s*,', 'g'), '$1');
+        code = code.replace(new RegExp('(\\[)\\s*,', 'g'), '$1');
+        code = code.replace(new RegExp(',\\s*(\\})', 'g'), '$1');
+        code = code.replace(new RegExp(',\\s*(\\])', 'g'), '$1');
+
+        // 10. Clean up 4+ consecutive dots outside JSX text
+        code = code.replace(new RegExp('\\.{4,}', 'g'), '');
+
+        // 11. Fix missing array brackets in comma-separated object exports
+        var declRegex = new RegExp('((?:export\\s+)?(?:const|let|var)\\s+[a-zA-Z0-9_$]+\\s*=\\s*)(' + notBrackets + ')(\\s*\\{[\\s\\S]*?\\}(?:\\s*,\\s*\\{[\\s\\S]*?\\})+;?)', 'g');
+        code = code.replace(declRegex, function(match, prefix, nb, objects) {
+          var cleanObjs = (nb + objects).trim();
+          var hasSemi = cleanObjs.endsWith(';');
+          if (hasSemi) cleanObjs = cleanObjs.slice(0, -1).trim();
+          var nl = String.fromCharCode(10);
+          return prefix + '[' + nl + cleanObjs + nl + ']' + (hasSemi ? ';' : '');
+        });
+
+        // Fix missing array brackets in default export
+        var defRegex = new RegExp('(export\\s+default\\s+)(' + notBrackets + ')(\\s*\\{[\\s\\S]*?\\}(?:\\s*,\\s*\\{[\\s\\S]*?\\})+;?)', 'g');
+        code = code.replace(defRegex, function(match, prefix, nb, objects) {
+          var cleanObjs = (nb + objects).trim();
+          var hasSemi = cleanObjs.endsWith(';');
+          if (hasSemi) cleanObjs = cleanObjs.slice(0, -1).trim();
+          var nl = String.fromCharCode(10);
+          return prefix + '[' + nl + cleanObjs + nl + ']' + (hasSemi ? ';' : '');
+        });
+
+        // 11b. Deduplicate React imports - merge all 'from react' imports into one
+        var _riNl = String.fromCharCode(10);
+        var _riSq = String.fromCharCode(39);
+        var _riDq = String.fromCharCode(34);
+        var _riLines = code.split(_riNl);
+        var _riReact = [];
+        var _riRest = [];
+        for (var _riI = 0; _riI < _riLines.length; _riI++) {
+          var _riT = _riLines[_riI].trim();
+          var _riIsR = _riT.indexOf('import ') === 0 &&
+            (_riT.indexOf('from ' + _riSq + 'react' + _riSq) !== -1 ||
+             _riT.indexOf('from ' + _riDq + 'react' + _riDq) !== -1);
+          if (_riIsR) { _riReact.push(_riT); } else { _riRest.push(_riLines[_riI]); }
+        }
+        if (_riReact.length > 1) {
+          var _riNamed = {};
+          for (var _riJ = 0; _riJ < _riReact.length; _riJ++) {
+            var _riImp = _riReact[_riJ];
+            var _riStart = _riImp.indexOf('{');
+            var _riEnd = _riImp.indexOf('}');
+            if (_riStart !== -1 && _riEnd !== -1) {
+              var _riParts = _riImp.substring(_riStart + 1, _riEnd).split(',');
+              for (var _riK = 0; _riK < _riParts.length; _riK++) {
+                var _riN = _riParts[_riK].trim();
+                if (_riN && _riN !== 'React') _riNamed[_riN] = true;
+              }
+            }
+          }
+          var _riNamedArr = Object.keys(_riNamed);
+          var _riMerged = 'import React' +
+            (_riNamedArr.length > 0 ? ', { ' + _riNamedArr.join(', ') + ' }' : '') +
+            ' from ' + _riSq + 'react' + _riSq + ';';
+          code = _riMerged + _riNl + _riRest.join(_riNl);
+        }
+
+        return code;
+
+      }
+
+      function requireModule(modName, fromFile) {
+        var R = window.React || {};
+        var RD = window.ReactDOM || {};
+
+        // Framework / external packages
+        if (modName === 'react' || (typeof modName === 'string' && modName.indexOf('react/') === 0)) {
+          return Object.assign({ default: R }, R, {
+            useState: R.useState,
+            useEffect: R.useEffect,
+            useRef: R.useRef,
+            useMemo: R.useMemo,
+            useCallback: R.useCallback,
+            useContext: R.useContext,
+            useReducer: R.useReducer,
+            createContext: R.createContext,
+            Fragment: R.Fragment
+          });
+        }
+        if (modName === 'react-dom' || (typeof modName === 'string' && modName.indexOf('react-dom/') === 0)) {
+          return Object.assign({ default: RD }, RD);
+        }
+
+        // Framer Motion / Motion
+        if (modName === 'framer-motion' || modName === 'motion/react' || modName === 'motion') {
+          var motionProxy = new Proxy({}, {
+            get: function(_, prop) {
+              return function MotionTag(p) {
+                var props = Object.assign({}, p);
+                delete props.initial;
+                delete props.animate;
+                delete props.exit;
+                delete props.transition;
+                delete props.whileHover;
+                delete props.whileTap;
+                delete props.whileInView;
+                delete props.viewport;
+                delete props.layout;
+                delete props.layoutId;
+                return R.createElement ? R.createElement(prop, props) : null;
+              };
+            }
+          });
+          return {
+            motion: motionProxy,
+            AnimatePresence: function(p) { return p.children || null; },
+            useAnimation: function() { return { start: function() {}, stop: function() {} }; },
+            useMotionValue: function(v) { return { get: function() { return v; }, set: function() {} }; },
+            useTransform: function() { return 0; },
+            useSpring: function(v) { return v; },
+            useScroll: function() { return { scrollY: { get: function() { return 0; } }, scrollYProgress: { get: function() { return 0; } } }; },
+            default: { motion: motionProxy, AnimatePresence: function(p) { return p.children || null; } }
+          };
+        }
+
+        // clsx, tailwind-merge, classnames, cn
+        if (
+          modName === 'clsx' ||
+          modName === 'tailwind-merge' ||
+          modName === 'classnames' ||
+          modName === 'clsx/lite' ||
+          modName === '@/lib/utils' ||
+          modName === '@/utils' ||
+          modName === './utils' ||
+          modName === '../utils' ||
+          modName === './lib/utils' ||
+          modName === '../lib/utils' ||
+          modName === 'lib/utils' ||
+          modName === 'utils'
+        ) {
+          var cnFn = function() {
+            var args = Array.from(arguments);
+            var classes = [];
+            for (var i = 0; i < args.length; i++) {
+              var arg = args[i];
+              if (!arg) continue;
+              if (typeof arg === 'string' || typeof arg === 'number') {
+                classes.push(arg);
+              } else if (Array.isArray(arg)) {
+                if (arg.length) {
+                  var inner = cnFn.apply(null, arg);
+                  if (inner) classes.push(inner);
+                }
+              } else if (typeof arg === 'object') {
+                for (var key in arg) {
+                  if (arg[key]) classes.push(key);
+                }
+              }
+            }
+            return classes.join(' ');
+          };
+          cnFn.__esModule = true;
+          cnFn.default = cnFn;
+          cnFn.clsx = cnFn;
+          cnFn.twMerge = cnFn;
+          cnFn.cn = cnFn;
+          cnFn.ClassValue = {};
+          return cnFn;
+        }
+
+        // class-variance-authority / cva / tailwind-variants
+        if (modName === 'class-variance-authority' || modName === 'tailwind-variants' || modName === 'cva') {
+          var cvaFn = function(base, config) {
+            return function(props) {
+              var classes = [base || ''];
+              if (config && config.variants && props) {
+                for (var v in config.variants) {
+                  var val = (props && props[v]) || (config.defaultVariants && config.defaultVariants[v]);
+                  if (val && config.variants[v] && config.variants[v][val]) {
+                    classes.push(config.variants[v][val]);
+                  }
+                }
+              }
+              if (props && props.className) classes.push(props.className);
+              return classes.filter(Boolean).join(' ');
+            };
+          };
+          cvaFn.__esModule = true;
+          cvaFn.default = cvaFn;
+          cvaFn.cva = cvaFn;
+          return cvaFn;
+        }
+
+        // Radix UI Component Emulators
+        if (typeof modName === 'string' && modName.indexOf('@radix-ui/') === 0) {
+          var RadixSlot = function(p) { return (p && p.children) || null; };
+          RadixSlot.__esModule = true;
+          RadixSlot.default = RadixSlot;
+          var RadixProxy = new Proxy(RadixSlot, {
+            get: function(_, prop) {
+              if (prop === '__esModule') return true;
+              if (prop === 'default' || prop === 'Slot') return RadixSlot;
+              return function RadixComp(p) { return (p && p.children) || null; };
+            }
+          });
+          return RadixProxy;
+        }
+
+        // Sonner & Toast
+        if (modName === 'sonner' || modName === 'react-hot-toast') {
+          var toastFn = function() {};
+          toastFn.success = toastFn;
+          toastFn.error = toastFn;
+          toastFn.info = toastFn;
+          toastFn.warning = toastFn;
+          toastFn.custom = toastFn;
+          toastFn.dismiss = function() {};
+          return {
+            __esModule: true,
+            default: toastFn,
+            toast: toastFn,
+            Toaster: function() { return null; }
+          };
+        }
+
+        // Lucide & Hugeicons & any icon library
+        if (
+          modName === 'lucide-react' ||
+          modName === '@hugeicons/react' ||
+          modName === '@hugeicons/core-free-icons' ||
+          (typeof modName === 'string' && modName.indexOf('icon') !== -1)
+        ) {
+          return new Proxy({}, {
+            get: function(_, prop) {
+              if (prop === '__esModule' || prop === 'default') return {};
+              return function MockIcon(p) {
+                var size = (p && p.size) || 18;
+                var className = (p && p.className) || '';
+                var strokeWidth = (p && p.strokeWidth) || 2;
+                var propClean = String(prop || '').replace(/Icon$/, '');
+                var innerSvg = ICON_PATHS[propClean] || ICON_PATHS[prop] || '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+                return R.createElement ? R.createElement('svg', {
+                  xmlns: 'http://www.w3.org/2000/svg',
+                  width: size,
+                  height: size,
+                  viewBox: '0 0 24 24',
+                  fill: 'none',
+                  stroke: 'currentColor',
+                  strokeWidth: strokeWidth,
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
+                  className: className,
+                  dangerouslySetInnerHTML: { __html: innerSvg }
+                }) : null;
+              };
+            }
+          });
+        }
+
+        // React Router Dom / Wouter Emulator
+        if (modName === 'react-router-dom' || modName === 'react-router' || modName === 'wouter') {
+          var RouterContext = R.createContext ? R.createContext({ path: '/', navigate: function() {} }) : null;
+          function RouterProvider(props) {
+            var state = R.useState ? R.useState(window.location.hash.slice(1) || '/') : ['/', function() {}];
+            var currentPath = state[0];
+            var setPath = state[1];
+            R.useEffect ? R.useEffect(function() {
+              var onHash = function() { setPath(window.location.hash.slice(1) || '/'); };
+              window.addEventListener('hashchange', onHash);
+              return function() { window.removeEventListener('hashchange', onHash); };
+            }, []) : null;
+            var nav = function(to) { window.location.hash = '#' + to; setPath(to); };
+            return R.createElement ? R.createElement(RouterContext.Provider, { value: { path: currentPath, navigate: nav } }, props.children) : null;
+          }
+          function RoutesComp(props) {
+            var ctx = (R.useContext && RouterContext) ? R.useContext(RouterContext) : { path: '/' };
+            var children = Array.isArray(props.children) ? props.children : [props.children];
+            for (var i = 0; i < children.length; i++) {
+              var child = children[i];
+              if (!child || !child.props) continue;
+              var routePath = child.props.path || '/';
+              if (routePath === '*' || routePath === ctx.path || (routePath !== '/' && ctx.path.indexOf(routePath) === 0)) {
+                return child.props.element || (child.props.Component ? R.createElement(child.props.Component) : (child.props.children || null));
+              }
+            }
+            return children[0] ? (children[0].props.element || (children[0].props.Component ? R.createElement(children[0].props.Component) : null)) : null;
+          }
+          function RouteComp(props) {
+            return props.element || (props.Component ? R.createElement(props.Component) : (props.children || null));
+          }
+          function LinkComp(props) {
+            var ctx = (R.useContext && RouterContext) ? R.useContext(RouterContext) : { navigate: function() {} };
+            return R.createElement ? R.createElement('a', Object.assign({}, props, {
+              href: '#' + (props.to || props.href || '/'),
+              onClick: function(e) {
+                e.preventDefault();
+                if (ctx.navigate) ctx.navigate(props.to || props.href || '/');
+              }
+            }), props.children) : null;
+          }
+          return {
+            BrowserRouter: RouterProvider,
+            HashRouter: RouterProvider,
+            MemoryRouter: RouterProvider,
+            Router: RouterProvider,
+            Routes: RoutesComp,
+            Route: RouteComp,
+            Link: LinkComp,
+            NavLink: LinkComp,
+            Outlet: function(p) { return p.children || null; },
+            useNavigate: function() {
+              var ctx = (R.useContext && RouterContext) ? R.useContext(RouterContext) : { navigate: function() {} };
+              return ctx.navigate || function() {};
+            },
+            useLocation: function() {
+              var ctx = (R.useContext && RouterContext) ? R.useContext(RouterContext) : { path: '/' };
+              return { pathname: ctx.path, search: '', hash: '' };
+            },
+            useParams: function() { return {}; },
+            useSearchParams: function() { return [new URLSearchParams(), function() {}]; },
+            Navigate: function(p) {
+              R.useEffect ? R.useEffect(function() { if (p && p.to) window.location.hash = '#' + p.to; }, []) : null;
+              return null;
+            }
+          };
+        }
+
+        // Next.js Link & Router Stubs
+        if (modName === 'next/link') {
+          return function NextLink(p) {
+            return R.createElement ? R.createElement('a', Object.assign({ href: p.href || '#' }, p), p.children) : null;
+          };
+        }
+        if (modName === 'next/router' || modName === 'next/navigation') {
+          return {
+            useRouter: function() { return { push: function() {}, replace: function() {}, pathname: '/' }; },
+            usePathname: function() { return '/'; },
+            useSearchParams: function() { return new URLSearchParams(); }
+          };
+        }
+        if (modName === 'next/image') {
+          return function NextImage(p) {
+            return R.createElement ? R.createElement('img', Object.assign({}, p, { src: p.src || '' })) : null;
+          };
+        }
+
+        if (modName === 'axios') {
+          var axiosStub = function(url) { return window.fetch(url).then(function(r) { return r.json(); }).then(function(d) { return { data: d }; }); };
+          axiosStub.get = function(url) { return axiosStub(url); };
+          axiosStub.post = function(url, data) { return window.fetch(url, { method: 'POST', body: JSON.stringify(data) }).then(function(r) { return r.json(); }).then(function(d) { return { data: d }; }); };
+          return axiosStub;
+        }
+
+        if (modName === 'canvas-confetti') {
+          return window.confetti || function() {};
+        }
+
+        // Resolve against project fileMap
+        var resolvedKey = resolveFileKey(modName, fromFile);
+        if (resolvedKey && fileMap[resolvedKey]) {
+          var normTarget = normalizeModPath(resolvedKey);
+          if (moduleCache[normTarget]) {
+            return moduleCache[normTarget].exports;
+          }
+
+          var fileItem = fileMap[resolvedKey];
+          var mod = { exports: {} };
+          moduleCache[normTarget] = mod;
+
+          try {
+            var cleanCode = autoRepairCode(fileItem.content || '', resolvedKey);
+
+            var isTS = resolvedKey.endsWith('.ts') || resolvedKey.endsWith('.tsx');
+            var presets = [
+              // Target Chrome 80+ — native spread/arrow/const support, only transform modules
+              ['env', { modules: 'commonjs', loose: true, targets: { chrome: '80' } }],
+              ['react', { runtime: 'classic' }]
+            ];
+            if (isTS && window.Babel && window.Babel.availablePresets && window.Babel.availablePresets.typescript) {
+              presets.unshift(['typescript', { isTSX: true, allExtensions: true }]);
+            }
+
+            var res = window.Babel.transform(cleanCode, {
+              presets: presets,
+              plugins: [],
+              filename: resolvedKey
+            });
+
+            var scopedRequire = function(reqPath) {
+              return requireModule(reqPath, resolvedKey);
+            };
+
+            var execFn = new Function(
+              'exports', 'require', 'module', 'React', 'ReactDOM',
+              'useState', 'useEffect', 'useRef', 'useMemo',
+              'useCallback', 'useContext', 'useReducer', 'createContext', 'Fragment',
+              '_extends', '_objectSpread', '_interopRequireDefault', '_interopRequireWildcard',
+              '_toConsumableArray', '_slicedToArray', '_defineProperty',
+              res.code
+            );
+
+            execFn(
+              mod.exports,
+              scopedRequire,
+              mod,
+              R,
+              RD,
+              R.useState, R.useEffect, R.useRef, R.useMemo,
+              R.useCallback, R.useContext, R.useReducer, R.createContext, R.Fragment,
+              window._extends, window._objectSpread, window._interopRequireDefault, window._interopRequireWildcard,
+              window._toConsumableArray, window._slicedToArray, window._defineProperty
+            );
+
+            if (mod.exports && typeof mod.exports === 'object') {
+              mod.exports.__esModule = true;
+            }
+            return mod.exports;
+          } catch (modErr) {
+            console.warn('[PWNAI Module Bundler] Module notice "' + resolvedKey + '":', modErr);
+            var safeFallbackProxy = new Proxy({}, {
+              get: function(_, prop) {
+                if (prop === '__esModule') return true;
+                if (prop === 'default' || (typeof prop === 'string' && prop.charAt(0) >= 'A' && prop.charAt(0) <= 'Z')) {
+                  return function SafeStub(props) {
+                    return R.createElement ? R.createElement('div', {
+                      style: { padding: '6px 10px', background: 'rgba(239, 68, 68, 0.08)', borderRadius: '6px', color: '#f87171', fontSize: '11px', margin: '4px 0' }
+                    }, (props && props.children) || ('[' + String(prop) + ']')) : null;
+                  };
+                }
+                return [];
+              }
+            });
+            mod.exports = safeFallbackProxy;
+            return mod.exports;
+          }
+        }
+
+        // Safe stub for unknown/unresolved modules — callable proxy that never crashes with "... is not a function"
+        function createSafeStub(name) {
+          var stubFn = function SafeStubCallable() {
+            var args = Array.from(arguments);
+            if (args.length > 0 && args[0] && typeof args[0] === 'object' && ('children' in args[0] || 'className' in args[0])) {
+              return args[0].children || null;
+            }
+            return '';
+          };
+          stubFn.__esModule = true;
+          stubFn.default = stubFn;
+          return new Proxy(stubFn, {
+            get: function(target, prop) {
+              if (prop === '__esModule') return true;
+              if (prop === 'default') return stubFn;
+              if (typeof prop === 'symbol') return undefined;
+              if (prop === 'then' || prop === 'catch') return undefined;
+              return createSafeStub(String(prop));
+            }
+          });
+        }
+        return createSafeStub(modName);
+      }
+
+      function runProject(rawFiles) {
+        if (!rawFiles || !rawFiles.length) return;
+        hasReceivedFirstRun = true;
+
+        var loader = document.getElementById('__pwnai_loader');
+        if (loader) loader.style.display = 'none';
+
+        moduleCache = {};
+        fileMap = {};
+
+        var overlay = document.getElementById('__err_overlay');
+        if (overlay) overlay.style.display = 'none';
+
+        waitForDependencies(function() {
+          var R = window.React;
+          var RD = window.ReactDOM;
+
+          if (!R || !RD) {
+            displayError('runtime', 'React Yüklenemedi', 'React ve ReactDOM kütüphaneleri yüklenemedi. Lütfen internet bağlantınızı kontrol edin.');
+            return;
+          }
+
+          window.useState = R.useState;
+          window.useEffect = R.useEffect;
+          window.useRef = R.useRef;
+          window.useMemo = R.useMemo;
+          window.useCallback = R.useCallback;
+          window.useContext = R.useContext;
+          window.useReducer = R.useReducer;
+          window.createContext = R.createContext;
+          window.Fragment = R.Fragment;
+
+          try {
+            // 1. Process and inject styles (CSS)
+            var cssFiles = rawFiles.filter(function(f) { return (f.name || '').endsWith('.css'); });
+            var existingStyles = document.querySelectorAll('style[data-pwnai-injected]');
+            existingStyles.forEach(function(s) { s.remove(); });
+
+            cssFiles.forEach(function(cf) {
+              var styleEl = document.createElement('style');
+              styleEl.setAttribute('data-pwnai-injected', 'true');
+              styleEl.textContent = cf.content;
+              document.head.appendChild(styleEl);
+            });
+
+            // 2. Populate fileMap with all files
+            rawFiles.forEach(function(f) {
+              var n = cleanPath(f.name || '');
+              fileMap[n] = f;
+            });
+
+            // 3. Locate entry file (App / Main / index)
+            var allKeys = Object.keys(fileMap);
+            var codeKeys = allKeys.filter(function(k) {
+              var n = k.toLowerCase();
+              return n.endsWith('.jsx') || n.endsWith('.tsx') || n.endsWith('.js') || n.endsWith('.ts');
+            });
+
+            // Exclude helper/data/types files when picking primary entry
+            var candidateKeys = codeKeys.filter(function(k) {
+              var lower = k.toLowerCase();
+              return !(
+                lower.indexOf('/data/') !== -1 ||
+                lower.indexOf('mockdata') !== -1 ||
+                lower.indexOf('/types/') !== -1 ||
+                lower.indexOf('/utils/') !== -1 ||
+                lower.indexOf('constants') !== -1
+              );
+            });
+            if (candidateKeys.length === 0) candidateKeys = codeKeys;
+
+            var entryFile = null;
+            // Exact priority: App.tsx / App.jsx / src/App.tsx / src/App.jsx / Main / Index
+            var priorities = [
+              'app.tsx', 'app.jsx', 'src/app.tsx', 'src/app.jsx',
+              'main.tsx', 'main.jsx', 'src/main.tsx', 'src/main.jsx',
+              'index.tsx', 'index.jsx', 'src/index.tsx', 'src/index.jsx',
+              'app.js', 'src/app.js', 'main.js', 'src/main.js', 'index.js', 'src/index.js'
+            ];
+
+            for (var p = 0; p < priorities.length; p++) {
+              for (var c = 0; c < candidateKeys.length; c++) {
+                if (cleanPath(candidateKeys[c]).toLowerCase() === priorities[p]) {
+                  entryFile = candidateKeys[c];
+                  break;
+                }
+              }
+              if (entryFile) break;
+            }
+
+            if (!entryFile) {
+              for (var a = 0; a < candidateKeys.length; a++) {
+                if (candidateKeys[a].toLowerCase().indexOf('app') !== -1) {
+                  entryFile = candidateKeys[a];
+                  break;
+                }
+              }
+            }
+
+            if (!entryFile && candidateKeys.length > 0) {
+              entryFile = candidateKeys[0];
+            }
+
+            function resolveComponent(cand) {
+              if (!cand) return null;
+              if (typeof cand === 'function') return cand;
+              if (typeof cand === 'object') {
+                if (typeof cand.default === 'function') return cand.default;
+                if (cand.$$typeof) return cand;
+                if (cand.default && (typeof cand.default === 'object' || typeof cand.default === 'function')) {
+                  return resolveComponent(cand.default);
+                }
+              }
+              return null;
+            }
+
+            var RootComponent = null;
+            if (entryFile) {
+              var appExports = requireModule(entryFile, '');
+              RootComponent = resolveComponent(appExports.default) || resolveComponent(appExports.App) || resolveComponent(appExports.Main) || resolveComponent(appExports);
+            }
+
+            // Fallback search across candidate modules if App not resolved
+            if (!RootComponent) {
+              candidateKeys.forEach(function(k) {
+                if (!RootComponent) {
+                  var exp = requireModule(k, '');
+                  RootComponent = resolveComponent(exp.default) || resolveComponent(exp.App) || resolveComponent(exp);
+                }
+              });
+            }
+
+            if (RootComponent && (typeof RootComponent === 'function' || typeof RootComponent === 'object')) {
+              var rootEl = document.getElementById('root');
+              if (RD.createRoot) {
+                if (!window.__pwnai_react_root) {
+                  window.__pwnai_react_root = RD.createRoot(rootEl);
+                }
+                window.__pwnai_react_root.render(R.createElement(RootComponent));
+              } else {
+                RD.render(R.createElement(RootComponent), rootEl);
+              }
+            } else {
+              // Check if HTML file exists
+              var htmlFile = rawFiles.find(function(f) { return (f.name || '').endsWith('.html'); });
+              if (htmlFile && htmlFile.content) {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(htmlFile.content, 'text/html');
+                Array.from(doc.head.querySelectorAll('style, link[rel="stylesheet"]')).forEach(function(el) {
+                  document.head.appendChild(el.cloneNode(true));
+                });
+                var rootEl2 = document.getElementById('root');
+                if (rootEl2) {
+                  rootEl2.innerHTML = doc.body.innerHTML;
+                  Array.from(rootEl2.querySelectorAll('script')).forEach(function(oldScript) {
+                    var newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach(function(attr) {
+                      newScript.setAttribute(attr.name, attr.value);
+                    });
+                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                  });
+                  return;
+                }
+              }
+              displayError('build', 'Root Bileşen Bulunamadı', 'Projeden dışa aktarılan App bileşeni bulunamadı. Lütfen "export default function App()" tanımlayın.');
+            }
+          } catch (globalErr) {
+            console.error("Global run error:", globalErr);
+            displayError('runtime', 'Genel Hata', (globalErr && globalErr.stack) || String(globalErr));
+          }
+        });
+      }
+
+      // Safely decode initial files from the Base64 script payload
+      var initialFiles = [];
+      try {
+        var filesPayloadEl = document.getElementById('__pwnai_initial_files');
+        if (filesPayloadEl && filesPayloadEl.textContent) {
+          var rawPayload = filesPayloadEl.textContent.trim();
+          if (rawPayload) {
+            var decodedJson = decodeURIComponent(
+              Array.prototype.map
+                .call(atob(rawPayload), function(c) {
+                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                })
+                .join('')
+            );
+            initialFiles = JSON.parse(decodedJson);
+          }
+        }
+      } catch (payloadErr) {
+        console.error('[PWNAI] Failed to parse initial files payload:', payloadErr);
+      }
+
+      if (initialFiles && initialFiles.length > 0) {
+        runProject(initialFiles);
+      }
+
+      // Listen for project code updates from parent via Structured Clone postMessage
+      window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'PWNAI_RUN_PROJECT') {
+          runProject(event.data.files);
+        }
+      });
+
+      // Signal parent that runner is ready immediately
+      window.parent.postMessage({ type: 'PWNAI_PREVIEW_READY' }, '*');
+
+      // Handshake polling until first project run to eliminate race conditions
+      var readyInterval = setInterval(function() {
+        if (hasReceivedFirstRun) {
+          clearInterval(readyInterval);
+          return;
+        }
+        window.parent.postMessage({ type: 'PWNAI_PREVIEW_READY' }, '*');
+      }, 200);
+
+      window.addEventListener('DOMContentLoaded', function() {
+        window.parent.postMessage({ type: 'PWNAI_PREVIEW_READY' }, '*');
+      });
+      window.addEventListener('load', function() {
+        window.parent.postMessage({ type: 'PWNAI_PREVIEW_READY' }, '*');
+      });
+    })();
+  </script>
+</body>
+</html>
