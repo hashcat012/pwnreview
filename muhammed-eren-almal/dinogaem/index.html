@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Fast React 18 UMD & Babel Standalone (Cloudflare cdnjs CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.3/confetti.browser.min.js"></script>
+
+  <style>
+    *, ::before, ::after { box-sizing: border-box; }
+    body::before, html::before, #root::before { content: none !important; display: none !important; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
+    body { background-color: #ffffff; color: #09090b; font-family: 'Inter', system-ui, sans-serif; }
+    #root { min-height: 100vh; }
+    @keyframes pwnai-spin { to { transform: rotate(360deg); } }
+    .pwnai-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: pwnai-spin 0.8s linear infinite;
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-white antialiased min-h-screen">
+  <div id="root">
+    <div id="__pwnai_loader" style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px;color:#a1a1aa;font-family:'Inter',system-ui,sans-serif;text-align:center;padding:24px;">
+            <div class="pwnai-spinner"></div>
+            <div>
+              <h3 style="font-size:14px;font-weight:600;color:#f4f4f5;margin:0 0 4px 0;">Önizleme Hazırlanıyor...</h3>
+              <p style="font-size:12px;color:#71717a;margin:0;" id="__pwnai_loader_status">Bileşenler derleniyor...</p>
+            </div>
+          </div>
+  </div>
+
+  <!-- Error Overlay -->
+  <div id="__err_overlay" style="display:none;position:fixed;inset:0;background:rgba(9,9,11,0.85);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;padding:16px;">
+    <div style="max-width:580px;width:100%;background:#18181b;border:1px solid #27272a;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);overflow:hidden;font-family:'Inter',system-ui,sans-serif;">
+      <div style="padding:16px 20px;border-bottom:1px solid #27272a;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#ef444420;border:1px solid #ef444440;display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:12px;font-weight:bold;">!</div>
+          <span id="__err_title" style="font-size:14px;font-weight:600;color:#fafafa;">Çalıştırma Hatası</span>
+        </div>
+      </div>
+      <div style="padding:16px 20px;max-height:240px;overflow:auto;background:#09090b;">
+        <pre id="__err_text" style="margin:0;font-family:ui-monospace,monospace;font-size:12px;color:#fca5a5;white-space:pre-wrap;word-break:break-word;line-height:1.5;"></pre>
+      </div>
+      <div style="padding:12px 20px;background:#18181b;display:flex;align-items:center;justify-content:flex-end;gap:10px;">
+        <button id="__err_retry_btn" style="padding:8px 14px;border-radius:8px;border:1px solid #3f3f46;background:#27272a;color:#fafafa;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">
+          Yeniden Dene
+        </button>
+        <button id="__err_fix_btn" style="padding:8px 16px;border-radius:8px;border:none;background:#fafafa;color:#09090b;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+          <span>✨ Fix with AI</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Base64 Initial Files Payload (immune to unescaped token/character syntax errors) -->
+  <script id="__pwnai_initial_files" type="text/plain" style="display:none;">W3sibmFtZSI6ImluZGV4Lmh0bWwiLCJjb250ZW50IjoiPCFET0NUWVBFIGh0bWw+XG48aHRtbCBsYW5nPVwidHJcIj5cbjxoZWFkPlxuICA8bWV0YSBjaGFyc2V0PVwiVVRGLThcIj5cbiAgPG1ldGEgbmFtZT1cInZpZXdwb3J0XCIgY29udGVudD1cIndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLjAsIG1heGltdW0tc2NhbGU9MS4wLCB1c2VyLXNjYWxhYmxlPTBcIj5cbiAgPHRpdGxlPlB3bkRpbm8gfCBNb2JpbGUgUmVhZHk8L3RpdGxlPlxuICA8c2NyaXB0IHNyYz1cImh0dHBzOi8vY2RuLnRhaWx3aW5kY3NzLmNvbVwiPjwvc2NyaXB0PlxuPC9oZWFkPlxuPGJvZHkgY2xhc3M9XCJiZy16aW5jLTk1MCB0ZXh0LXdoaXRlIG92ZXJmbG93LWhpZGRlbiB0b3VjaC1ub25lXCI+XG4gIDxkaXYgaWQ9XCJyb290XCI+PC9kaXY+XG48L2JvZHk+XG48L2h0bWw+In0seyJuYW1lIjoic3JjL0FwcC5qc3giLCJjb250ZW50IjoiaW1wb3J0IFJlYWN0LCB7IHVzZVN0YXRlLCB1c2VFZmZlY3QsIHVzZUNhbGxiYWNrLCB1c2VSZWYgfSBmcm9tICdyZWFjdCc7XG5pbXBvcnQgeyBtb3Rpb24sIEFuaW1hdGVQcmVzZW5jZSB9IGZyb20gJ2ZyYW1lci1tb3Rpb24nO1xuaW1wb3J0IHsgUmVmcmVzaEN3LCBUcm9waHksIFBsYXkgfSBmcm9tICdsdWNpZGUtcmVhY3QnO1xuXG5leHBvcnQgZGVmYXVsdCBmdW5jdGlvbiBBcHAoKSB7XG4gIC8vIC0tLS0tLS0tLS0gU3RhdGUgLS0tLS0tLS0tLVxuICBjb25zdCBbaXNTdGFydGVkLCBzZXRJc1N0YXJ0ZWRdID0gdXNlU3RhdGUoZmFsc2UpO1xuICBjb25zdCBbaXNHYW1lT3Zlciwgc2V0SXNHYW1lT3Zlcl0gPSB1c2VTdGF0ZShmYWxzZSk7XG4gIGNvbnN0IFtzY29yZSwgc2V0U2NvcmVdID0gdXNlU3RhdGUoMCk7XG4gIGNvbnN0IFtoaWdoU2NvcmUsIHNldEhpZ2hTY29yZV0gPSB1c2VTdGF0ZSgwKTtcbiAgY29uc3QgW2Rpbm9ZLCBzZXREaW5vWV0gPSB1c2VTdGF0ZSgwKTsgICAgICAgICAgLy8gMCA9IHllcmRlLCBuZWdhdGlmID0gaGF2YWRhXG4gIGNvbnN0IFtvYnN0YWNsZVgsIHNldE9ic3RhY2xlWF0gPSB1c2VTdGF0ZSg4MDApO1xuICBjb25zdCBnYW1lTG9vcCA9IHVzZVJlZihudWxsKTtcblxuICAvLyAtLS0tLS0tLS0tIFJlZnMgZm9yIGxhdGVzdCB2YWx1ZXMgLS0tLS0tLS0tLVxuICBjb25zdCBkaW5vWVJlZiA9IHVzZVJlZihkaW5vWSk7XG4gIGNvbnN0IHNjb3JlUmVmID0gdXNlUmVmKHNjb3JlKTtcbiAgY29uc3QgaXNTdGFydGVkUmVmID0gdXNlUmVmKGlzU3RhcnRlZCk7XG4gIGNvbnN0IGlzR2FtZU92ZXJSZWYgPSB1c2VSZWYoaXNHYW1lT3Zlcik7XG5cbiAgLy8gS2VlcCByZWZzIGluIHN5bmNcbiAgdXNlRWZmZWN0KCgpID0+IHtcbiAgICBkaW5vWVJlZi5jdXJyZW50ID0gZGlub1k7XG4gICAgc2NvcmVSZWYuY3VycmVudCA9IHNjb3JlO1xuICAgIGlzU3RhcnRlZFJlZi5jdXJyZW50ID0gaXNTdGFydGVkO1xuICAgIGlzR2FtZU92ZXJSZWYuY3VycmVudCA9IGlzR2FtZU92ZXI7XG4gIH0sIFtkaW5vWSwgc2NvcmUsIGlzU3RhcnRlZCwgaXNHYW1lT3Zlcl0pO1xuXG4gIC8vIC0tLS0tLS0tLS0gR2FtZSBDb250cm9scyAtLS0tLS0tLS0tXG4gIGNvbnN0IHN0YXJ0R2FtZSA9IHVzZUNhbGxiYWNrKCgpID0+IHtcbiAgICBzZXRJc1N0YXJ0ZWQodHJ1ZSk7XG4gICAgc2V0SXNHYW1lT3ZlcihmYWxzZSk7XG4gICAgc2V0U2NvcmUoMCk7XG4gICAgc2V0T2JzdGFjbGVYKDgwMCk7XG4gICAgc2V0RGlub1koMCk7XG4gIH0sIFtdKTtcblxuICBjb25zdCBqdW1wID0gdXNlQ2FsbGJhY2soKCkgPT4ge1xuICAgIC8vIEXEn2VyIG95dW4gYmHFn2xhbWFtxLHFn3NhIG90b21hdGlrIGJhxZ9sYXRcbiAgICBpZiAoIWlzU3RhcnRlZFJlZi5jdXJyZW50KSB7XG4gICAgICBzdGFydEdhbWUoKTtcbiAgICAgIHJldHVybjtcbiAgICB9XG4gICAgLy8gWmF0ZW4gaGF2YWRheXNhIHllbmkgesSxcGxhbWEgYmHFn2xhdG1hXG4gICAgaWYgKGRpbm9ZUmVmLmN1cnJlbnQgIT09IDApIHJldHVybjtcblxuICAgIHNldERpbm9ZKC0xMzApOyAvLyBaxLFwbGFtYSB5w7xrc2VrbGnEn2lcbiAgICBzZXRUaW1lb3V0KCgpID0+IHNldERpbm9ZKDApLCA0MDApOyAvLyA0MDDigK9tcyBzb25yYSB5ZXJlIGluXG4gIH0sIFtzdGFydEdhbWVdKTtcblxuICAvLyAtLS0tLS0tLS0tIElucHV0IExpc3RlbmVycyAtLS0tLS0tLS0tXG4gIHVzZUVmZmVjdCgoKSA9PiB7XG4gICAgY29uc3QgaGFuZGxlQWN0aW9uID0gKGUpID0+IHtcbiAgICAgIGlmIChlLnR5cGUgPT09ICdrZXlkb3duJyAmJiBlLmNvZGUgIT09ICdTcGFjZScpIHJldHVybjtcbiAgICAgIGp1bXAoKTtcbiAgICB9O1xuICAgIHdpbmRvdy5hZGRFdmVudExpc3RlbmVyKCdrZXlkb3duJywgaGFuZGxlQWN0aW9uKTtcbiAgICB3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lcigndG91Y2hzdGFydCcsIGhhbmRsZUFjdGlvbik7XG4gICAgcmV0dXJuICgpID0+IHtcbiAgICAgIHdpbmRvdy5yZW1vdmVFdmVudExpc3RlbmVyKCdrZXlkb3duJywgaGFuZGxlQWN0aW9uKTtcbiAgICAgIHdpbmRvdy5yZW1vdmVFdmVudExpc3RlbmVyKCd0b3VjaHN0YXJ0JywgaGFuZGxlQWN0aW9uKTtcbiAgICB9O1xuICB9LCBbanVtcF0pO1xuXG4gIC8vIC0tLS0tLS0tLS0gR2FtZSBMb29wIC0tLS0tLS0tLS1cbiAgdXNlRWZmZWN0KCgpID0+IHtcbiAgICBpZiAoIWlzU3RhcnRlZCkgcmV0dXJuO1xuXG4gICAgZ2FtZUxvb3AuY3VycmVudCA9IHNldEludGVydmFsKCgpID0+IHtcbiAgICAgIC8vIEVuZ2VsIGhhcmVrZXRpXG4gICAgICBzZXRPYnN0YWNsZVgoKHByZXYpID0+IHtcbiAgICAgICAgY29uc3QgbmV4dCA9IHByZXYgLSAxMjtcblxuICAgICAgICAvLyDDh2FycMSxxZ9tYSBrb250cm9sw7wg4oCTIHNhZGVjZSBkaW5vIHllcmUgZGXEn2l5b3JzYSAoZGlub1kgPT09IDApXG4gICAgICAgIGlmIChuZXh0IDwgMTA0ICYmIG5leHQgPiA0MCAmJiBkaW5vWVJlZi5jdXJyZW50ID09PSAwKSB7XG4gICAgICAgICAgc2V0SXNHYW1lT3Zlcih0cnVlKTtcbiAgICAgICAgICBzZXRJc1N0YXJ0ZWQoZmFsc2UpO1xuICAgICAgICAgIHNldEhpZ2hTY29yZSgocHJldkhpZ2gpID0+IE1hdGgubWF4KHByZXZIaWdoLCBzY29yZVJlZi5jdXJyZW50KSk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBFbmdlbCBla3JhbiBkxLHFn8SxbmEgw6fEsWt0xLF5c2EgeWVuaWRlbiBiYcWfbGF0XG4gICAgICAgIHJldHVybiBuZXh0IDw9IC02MCA/IDg1MCA6IG5leHQ7XG4gICAgICB9KTtcblxuICAgICAgLy8gU2tvciBhcnTEsXJtYVxuICAgICAgc2V0U2NvcmUoKHMpID0+IHMgKyAxKTtcbiAgICB9LCAyMCk7XG5cbiAgICByZXR1cm4gKCkgPT4gY2xlYXJJbnRlcnZhbChnYW1lTG9vcC5jdXJyZW50KTtcbiAgfSwgW2lzU3RhcnRlZF0pO1xuXG4gIC8vIC0tLS0tLS0tLS0gUmVuZGVyIC0tLS0tLS0tLS1cbiAgcmV0dXJuIChcbiAgICA8ZGl2IGNsYXNzTmFtZT1cImZsZXggZmxleC1jb2wgaXRlbXMtY2VudGVyIGp1c3RpZnktY2VudGVyIGgtc2NyZWVuIHctZnVsbCBiZy16aW5jLTk1MCBmb250LXNhbnMgcC00IHNlbGVjdC1ub25lXCI+XG4gICAgICB7LyogSGVhZGVyICovfVxuICAgICAgPGRpdiBjbGFzc05hbWU9XCJhYnNvbHV0ZSB0b3AtMTAgZmxleCBnYXAtOCB0ZXh0LXppbmMtNDAwIGZvbnQtbW9ubyB6LTEwXCI+XG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZmxleCBpdGVtcy1jZW50ZXIgZ2FwLTJcIj48VHJvcGh5IHNpemU9ezE4fSAvPiBISToge2hpZ2hTY29yZX08L2Rpdj5cbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJ0ZXh0LXhsIGZvbnQtYm9sZCB0ZXh0LXdoaXRlXCI+U0NPUkU6IHtzY29yZX08L2Rpdj5cbiAgICAgIDwvZGl2PlxuXG4gICAgICB7LyogR2FtZSBBcmVhICovfVxuICAgICAgPGRpdlxuICAgICAgICBjbGFzc05hbWU9XCJyZWxhdGl2ZSB3LWZ1bGwgbWF4LXctWzgwMHB4XSBoLVsyMDBweF0gYm9yZGVyLWItNCBib3JkZXItemluYy03MDAgYmctemluYy05MDAvMzAgcm91bmRlZC1sZyBvdmVyZmxvdy1oaWRkZW4gY3Vyc29yLXBvaW50ZXJcIlxuICAgICAgICBvbkNsaWNrPXtqdW1wfVxuICAgICAgPlxuICAgICAgICB7LyogWmVtaW4gw6dpemdpc2kgKi99XG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiYWJzb2x1dGUgYm90dG9tLTAgdy1mdWxsIGgtMSBiZy16aW5jLTYwMFwiIC8+XG5cbiAgICAgICAgey8qIERpbm8gKi99XG4gICAgICAgIDxtb3Rpb24uZGl2XG4gICAgICAgICAgYW5pbWF0ZT17eyB5OiBkaW5vWSB9fVxuICAgICAgICAgIHRyYW5zaXRpb249e3sgdHlwZTogJ3NwcmluZycsIHN0aWZmbmVzczogMzUwLCBkYW1waW5nOiAyMCB9fVxuICAgICAgICAgIGNsYXNzTmFtZT1cImFic29sdXRlIGxlZnQtMTAgYm90dG9tLTAgdy0xNiBoLTE2IGJnLWluZGlnby01MDAgcm91bmRlZC1sZyBzaGFkb3ctWzBfMF8yMHB4X3JnYmEoOTksMTAyLDI0MSwwLjUpXSBmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWNlbnRlciBmb250LWJvbGQgdGV4dC1zbSB6LTIwXCJcbiAgICAgICAgPlxuICAgICAgICAgIERJTk9cbiAgICAgICAgPC9tb3Rpb24uZGl2PlxuXG4gICAgICAgIHsvKiBFbmdlbCAqL31cbiAgICAgICAgPGRpdlxuICAgICAgICAgIHN0eWxlPXt7IGxlZnQ6IGAke29ic3RhY2xlWH1weGAgfX1cbiAgICAgICAgICBjbGFzc05hbWU9XCJhYnNvbHV0ZSBib3R0b20tMCB3LTEyIGgtMjAgYmctcm9zZS01MDAgcm91bmRlZC10LW1kIHNoYWRvdy1bMF8wXzE1cHhfcmdiYSgyNDQsNjMsOTQsMC40KV0gei0xMFwiXG4gICAgICAgIC8+XG5cbiAgICAgICAgey8qIEJhxZ9sYXQgLyBZZW5pZGVuIEJhxZ9sYXQgRWtyYW7EsSAqL31cbiAgICAgICAgPEFuaW1hdGVQcmVzZW5jZT5cbiAgICAgICAgICB7IWlzU3RhcnRlZCAmJiAoXG4gICAgICAgICAgICA8bW90aW9uLmRpdlxuICAgICAgICAgICAgICBpbml0aWFsPXt7IG9wYWNpdHk6IDAgfX1cbiAgICAgICAgICAgICAgYW5pbWF0ZT17eyBvcGFjaXR5OiAxIH19XG4gICAgICAgICAgICAgIGV4aXQ9e3sgb3BhY2l0eTogMCB9fVxuICAgICAgICAgICAgICBjbGFzc05hbWU9XCJhYnNvbHV0ZSBpbnNldC0wIGZsZXggaXRlbXMtY2VudGVyIGp1c3RpZnktY2VudGVyIGJnLXppbmMtOTUwLzgwIGJhY2tkcm9wLWJsdXItc20gei0zMFwiXG4gICAgICAgICAgICA+XG4gICAgICAgICAgICAgIDxidXR0b25cbiAgICAgICAgICAgICAgICBvbkNsaWNrPXtzdGFydEdhbWV9XG4gICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwicHgtOCBweS0zIGJnLXdoaXRlIHRleHQtYmxhY2sgZm9udC1ib2xkIHJvdW5kZWQtZnVsbCBmbGV4IGl0ZW1zLWNlbnRlciBnYXAtMiBob3ZlcjpzY2FsZS0xMDUgdHJhbnNpdGlvbi10cmFuc2Zvcm1cIlxuICAgICAgICAgICAgICA+XG4gICAgICAgICAgICAgICAgPFBsYXkgc2l6ZT17MjB9IC8+IHtpc0dhbWVPdmVyID8gJ1RFS1JBUiBPWU5BJyA6ICdPWVVOVSBCQcWeTEFUJ31cbiAgICAgICAgICAgICAgPC9idXR0b24+XG4gICAgICAgICAgICA8L21vdGlvbi5kaXY+XG4gICAgICAgICAgKX1cbiAgICAgICAgPC9BbmltYXRlUHJlc2VuY2U+XG5cbiAgICAgICAgey8qIEdhbWUgT3ZlciBPdmVybGF5ICovfVxuICAgICAgICB7aXNHYW1lT3ZlciAmJiAoXG4gICAgICAgICAgPG1vdGlvbi5kaXZcbiAgICAgICAgICAgIGluaXRpYWw9e3sgb3BhY2l0eTogMCB9fVxuICAgICAgICAgICAgYW5pbWF0ZT17eyBvcGFjaXR5OiAxIH19XG4gICAgICAgICAgICBjbGFzc05hbWU9XCJhYnNvbHV0ZSBpbnNldC0wIGZsZXggZmxleC1jb2wgaXRlbXMtY2VudGVyIGp1c3RpZnktY2VudGVyIGJnLXppbmMtOTUwLzkwIGJhY2tkcm9wLWJsdXItbWQgei0zMFwiXG4gICAgICAgICAgPlxuICAgICAgICAgICAgPGgyIGNsYXNzTmFtZT1cInRleHQtMnhsIGZvbnQtYm9sZCBtYi00IHRleHQtcm9zZS01MDBcIj5HQU1FIE9WRVI8L2gyPlxuICAgICAgICAgICAgPGJ1dHRvblxuICAgICAgICAgICAgICBvbkNsaWNrPXtzdGFydEdhbWV9XG4gICAgICAgICAgICAgIGNsYXNzTmFtZT1cInB4LTYgcHktMiBib3JkZXIgYm9yZGVyLXppbmMtNzAwIHJvdW5kZWQtZnVsbCBmbGV4IGl0ZW1zLWNlbnRlciBnYXAtMiBob3ZlcjpiZy16aW5jLTgwMCB0cmFuc2l0aW9uLWNvbG9yc1wiXG4gICAgICAgICAgICA+XG4gICAgICAgICAgICAgIDxSZWZyZXNoQ3cgc2l6ZT17MTZ9IC8+IFlFTsSwREVOIEJBxZ5MQVRcbiAgICAgICAgICAgIDwvYnV0dG9uPlxuICAgICAgICAgIDwvbW90aW9uLmRpdj5cbiAgICAgICAgKX1cbiAgICAgIDwvZGl2PlxuXG4gICAgICB7LyogRm9vdGVyIEhpbnQgKi99XG4gICAgICA8cCBjbGFzc05hbWU9XCJtdC04IHRleHQtemluYy01MDAgdGV4dC1zbSB0ZXh0LWNlbnRlclwiPlxuICAgICAgICBaxLFwbGFtYWsgacOnaW4gPGI+U1BBQ0U8L2I+IHR1xZ91bmEgYmFzxLFuIHZleWEgZWtyYW5hIGRva3VudW4uXG4gICAgICA8L3A+XG4gICAgPC9kaXY+XG4gICk7XG59In1d</script>
+
+  <script>
+    (function() {
+      window._extends = Object.assign || function(target) {
+        for (var i = 1; i < arguments.length; i++) {
+          var source = arguments[i];
+          for (var key in source) {
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
+              target[key] = source[key];
+            }
+          }
+        }
+        return target;
+      };
+      window._interopRequireDefault = function(obj) {
+        if (obj === null || typeof obj === 'undefined') return { default: obj };
+        if (obj.__esModule) return obj;
+        if (typeof obj === 'function') {
+          try { if (!obj.default) obj.default = obj; } catch (e) {}
+          return obj;
+        }
+        if (typeof obj === 'object' && typeof obj.default !== 'undefined') {
+          obj.__esModule = true;
+          return obj;
+        }
+        return { default: obj };
+      };
+      window._interopRequireWildcard = function(obj) {
+        if (obj && obj.__esModule) return obj;
+        var newObj = {};
+        if (obj != null) {
+          for (var key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];
+          }
+        }
+        newObj.default = obj;
+        newObj.__esModule = true;
+        return newObj;
+      };
+      window._toConsumableArray = function(arr) {
+        return Array.isArray(arr) ? arr.slice() : Array.from(arr || []);
+      };
+      window._slicedToArray = function(arr, i) {
+        return Array.isArray(arr) ? arr.slice(0, i) : Array.from(arr || []).slice(0, i);
+      };
+      window._defineProperty = function(obj, key, value) {
+        if (key in obj) {
+          Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });
+        } else {
+          obj[key] = value;
+        }
+        return obj;
+      };
+
+      var currentErrorContext = {
+        type: 'runtime',
+        message: '',
+        fileName: '',
+      };
+
+      function displayError(type, title, msg, fileName) {
+        currentErrorContext = {
+          type: type || 'runtime',
+          message: String(msg),
+          fileName: fileName || '',
+        };
+        var loader = document.getElementById('__pwnai_loader');
+        if (loader) loader.style.display = 'none';
+        var overlay = document.getElementById('__err_overlay');
+        var titleEl = document.getElementById('__err_title');
+        var textEl = document.getElementById('__err_text');
+        if (overlay && textEl) {
+          if (titleEl) titleEl.textContent = title || 'Önizleme Hatası';
+          textEl.textContent = currentErrorContext.message;
+          overlay.style.display = 'flex';
+        }
+      }
+
+      document.getElementById('__err_retry_btn').addEventListener('click', function() {
+        var overlay = document.getElementById('__err_overlay');
+        if (overlay) overlay.style.display = 'none';
+        window.parent.postMessage({ type: 'PWNAI_PREVIEW_READY' }, '*');
+      });
+
+      document.getElementById('__err_fix_btn').addEventListener('click', function() {
+        window.parent.postMessage({
+          type: 'PWNAI_FIX_ERROR',
+          errorType: currentErrorContext.type,
+          error: currentErrorContext.message,
+          fileName: currentErrorContext.fileName
+        }, '*');
+      });
+
+      window.onerror = function(m, s, l, c, e) {
+        displayError('runtime', 'Çalışma Zamanı Hatası', (e && e.stack) || m);
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        displayError('runtime', 'Promise Hatası', e.reason);
+      });
+
+      // Wait for dependencies (React, ReactDOM, Babel) to load from CDN
+      function waitForDependencies(callback, maxAttempts) {
+        var attempts = 0;
+        var max = maxAttempts || 50;
+        function check() {
+          attempts++;
+          if (window.React && window.ReactDOM && window.Babel) {
+            callback();
+          } else if (attempts < max) {
+            setTimeout(check, 40);
+          } else {
+            console.warn('[PWNAI-IFRAME] CDN load timeout, attempting fallback execution');
+            callback();
+          }
+        }
+        check();
+      }
+
+      // Real SVG Path Dictionary for Lucide Icons
+      var ICON_PATHS = {
+        Undo: '<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>',
+        Redo: '<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>',
+        RotateCcw: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+        RotateCw: '<path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+        ArrowTurnBackward: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>',
+        ArrowTurnForward: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/>',
+        Brain: '<path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M12 5v13"/><path d="M15.5 12h-7"/>',
+        Cpu: '<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/>',
+        Database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>',
+        Server: '<rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/>',
+        FolderPlus: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><line x1="12" x2="12" y1="10" y2="16"/><line x1="9" x2="15" y1="13" y2="13"/>',
+        FileCode: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><polyline points="14 2 14 8 20 8"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/>',
+        Bug: '<path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/>',
+        Key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>',
+        MessageSquare: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+        MessageCircle: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+        MessagesSquare: '<path d="M14 9a2 2 0 0 1-2 2H6l-3 3V4a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v7l-3-3h-5a2 2 0 0 1-2-2v-2"/>',
+        Bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+        Sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/>',
+        Sparkle: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
+        Search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+        Code: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+        Code2: '<path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/>',
+        Terminal: '<polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/>',
+        Check: '<polyline points="20 6 9 17 4 12"/>',
+        CheckCheck: '<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>',
+        CheckCircle: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+        CheckCircle2: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+        CheckSquare: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+        Star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+        Heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+        Shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+        ShieldCheck: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+        Zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+        Flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+        ArrowRight: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+        ArrowLeft: '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
+        ArrowUp: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+        ArrowDown: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
+        ChevronRight: '<path d="m9 18 6-6-6-6"/>',
+        ChevronDown: '<path d="m6 9 6 6 6-6"/>',
+        ChevronLeft: '<path d="m15 18-6-6 6-6"/>',
+        ChevronUp: '<path d="m18 15-6-6-6 6"/>',
+        Menu: '<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>',
+        X: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+        Plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+        Minus: '<path d="M5 12h14"/>',
+        PlusCircle: '<circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>',
+        MinusCircle: '<circle cx="12" cy="12" r="10"/><path d="M8 12h8"/>',
+        XCircle: '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
+        Trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+        Trash2: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
+        User: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+        Users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+        UserPlus: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>',
+        Lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+        Unlock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
+        Mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+        Send: '<line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+        SendHorizontal: '<path d="m3 3 3 9-3 9 19-9Z"/><path d="M6 12h16"/>',
+        Paperclip: '<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
+        Smile: '<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/>',
+        Globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+        Rocket: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>',
+        Layers: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+        Filter: '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
+        Sliders: '<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="1" x2="7" y1="14" y2="14"/><line x1="9" x2="15" y1="8" y2="8"/><line x1="17" x2="23" y1="16" y2="16"/>',
+        SlidersHorizontal: '<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/>',
+        ShoppingCart: '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
+        ShoppingBag: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+        Eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+        EyeOff: '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>',
+        Settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+        Settings2: '<path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
+        RefreshCw: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+        Clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+        Clock3: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16.5 12"/>',
+        TrendingUp: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+        TrendingDown: '<polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/>',
+        BarChart: '<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/>',
+        PieChart: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+        Download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+        Upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+        Home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+        Folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>',
+        File: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><polyline points="14 2 14 8 20 8"/>',
+        FileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/>',
+        Copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+        ExternalLink: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/>',
+        Link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+        Activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+        Bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+        Calendar: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
+        MapPin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+        LayoutDashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+        Sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+        Moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+        Info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+        HelpCircle: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+        AlertCircle: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+        AlertTriangle: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>',
+        MoreVertical: '<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>',
+        MoreHorizontal: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+        Play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+        Pause: '<rect width="4" height="16" x="6" y="4"/><rect width="4" height="16" x="14" y="4"/>',
+        Volume2: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
+        VolumeX: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/>',
+        Maximize2: '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/>',
+        Minimize2: '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" x2="21" y1="10" y2="3"/><line x1="3" x2="10" y1="21" y2="14"/>',
+        Share: '<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/>',
+        Share2: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
+        Edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+        Edit2: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+        Edit3: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+        CreditCard: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
+        Wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+        DollarSign: '<line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+        Percent: '<line x1="19" x2="5" y1="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
+        Award: '<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>',
+        Trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1h10v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34"/><path d="M18 4H6v7a6 6 0 0 0 12 0V4Z"/>',
+        Gift: '<polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7" rx="1"/><line x1="12" x2="12" y1="22" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
+        Package: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+        Box: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+        Cpu: '<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/>',
+        Database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+        Server: '<rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/>',
+        HardDrive: '<line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/>',
+        Wifi: '<path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/>',
+        Tag: '<path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r=".5" fill="currentColor"/>',
+        Bookmark: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
+        Pin: '<line x1="12" x2="12" y1="17" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>',
+        Phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+        Video: '<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>',
+        Camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+        Image: '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+        List: '<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>',
+        Grid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+        Table: '<path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>',
+        Columns: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/>',
+        Rows: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/>',
+        PanelLeft: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
+        PanelRight: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/>',
+        Wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+        Key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>',
+        Compass: '<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',
+        CornerDownLeft: '<polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/>',
+      };
+
+      // Virtual Module System & On-Demand CommonJS / ESM Module Cache
+      var moduleCache = {};
+      var fileMap = {};
+      var hasReceivedFirstRun = false;
+
+      function cleanPath(p) {
+        var str = String(p || '').trim();
+        while (str.indexOf('./') === 0) str = str.substring(2);
+        while (str.indexOf('../') === 0) str = str.substring(3);
+        if (str.indexOf('@/') === 0) str = str.substring(2);
+        if (str.indexOf('src/') === 0) str = str.substring(4);
+        return str;
+      }
+
+      function normalizeModPath(p) {
+        var str = cleanPath(p).toLowerCase();
+        var lastDot = str.lastIndexOf('.');
+        if (lastDot !== -1) {
+          var ext = str.substring(lastDot + 1);
+          if (['jsx', 'tsx', 'js', 'ts', 'json', 'css'].indexOf(ext) !== -1) {
+            str = str.substring(0, lastDot);
+          }
+        }
+        return str;
+      }
+
+      function resolveFileKey(requested, fromFile) {
+        var reqClean = cleanPath(requested);
+        var reqNorm = normalizeModPath(requested);
+
+        // 1. Direct match in fileMap
+        for (var k in fileMap) {
+          if (normalizeModPath(k) === reqNorm) return k;
+        }
+
+        // 2. Relative to fromFile directory
+        if (fromFile) {
+          var fromDir = '';
+          var slashIdx = fromFile.lastIndexOf('/');
+          if (slashIdx !== -1) fromDir = fromFile.substring(0, slashIdx + 1);
+          var relPath = fromDir + reqClean;
+          var relNorm = normalizeModPath(relPath);
+          for (var k2 in fileMap) {
+            if (normalizeModPath(k2) === relNorm) return k2;
+          }
+        }
+
+        // 3. Substring / suffix match
+        for (var k3 in fileMap) {
+          var kNorm = normalizeModPath(k3);
+          if (kNorm.endsWith('/' + reqNorm) || reqNorm.endsWith('/' + kNorm)) {
+            return k3;
+          }
+        }
+        return null;
+      }
+
+      function autoRepairCode(rawCode, filename) {
+        var code = String(rawCode || '').trim();
+        var fname = String(filename || '').toLowerCase();
+
+        // 1. Strip markdown fences if present
+        var triple = String.fromCharCode(96, 96, 96);
+        if (code.indexOf(triple) === 0) {
+          var firstNl = code.indexOf(String.fromCharCode(10));
+          if (firstNl !== -1) code = code.substring(firstNl + 1);
+          if (code.endsWith(triple)) code = code.substring(0, code.length - 3);
+          code = code.trim();
+        }
+
+        // 1b. Ensure import statements always start on a new line (inline, no IIFE)
+        // Fixes: }import React... or )import React... or ;import...
+        var _nbNl = String.fromCharCode(10);
+        var _nbImp = 'import';
+        var _nbI = 0;
+        while (_nbI < code.length - 6) {
+          var _nbCh = code.charAt(_nbI);
+          if ((_nbCh === '}' || _nbCh === ')' || _nbCh === ';') && code.substring(_nbI + 1, _nbI + 7) === _nbImp) {
+            code = code.substring(0, _nbI + 1) + _nbNl + code.substring(_nbI + 1);
+            _nbI += 2;
+          } else {
+            _nbI++;
+          }
+        }
+
+        // 2. Handle raw JSON files
+        if (fname.endsWith('.json') || (code.indexOf('{') === 0 && code.indexOf('export') === -1 && code.indexOf('import') === -1 && code.indexOf('const') === -1 && code.indexOf('function') === -1)) {
+          try {
+            JSON.parse(code);
+            return 'module.exports = ' + code + ';';
+          } catch (_) {}
+        }
+
+        var qChars = "[" + String.fromCharCode(34, 39) + "]";
+        var notQChars = "[^" + String.fromCharCode(34, 39) + "]+";
+        var notBrackets = "[^" + String.fromCharCode(91, 40, 123, 60, 34, 39, 96) + "\\d\\s]";
+
+        // 3. Remove ellipsis imports: import { ... } from './foo';
+        code = code.replace(new RegExp('import\\s*\\{\\s*\\.{2,}\\s*\\}\\s*from\\s*' + qChars + notQChars + qChars + ';?', 'g'), '');
+
+        // 4. Remove comments containing ellipsis
+        code = code.replace(new RegExp('^\\s*//.*$', 'gm'), function(line) {
+          return line.indexOf('...') !== -1 ? '' : line;
+        });
+        code = code.replace(new RegExp('/\\*[\\s\\S]*?\\.\\.\\.[\\s\\S]*?\\*/', 'g'), '');
+
+        // 5. Replace placeholder ellipsis blocks:
+        // function foo() { ... } or () => { ... } -> { return null; }
+        code = code.replace(new RegExp('\\{\\s*\\.{2,}\\s*\\}', 'g'), '{ /* placeholder */ }');
+        // [ ... ] -> []
+        code = code.replace(new RegExp('\\[\\s*\\.{2,}\\s*\\]', 'g'), '[]');
+        // ( ... ) -> ()
+        code = code.replace(new RegExp('\\(\\s*\\.{2,}\\s*\\)', 'g'), '()');
+
+        // 6. Replace placeholder assignments: const a = ...; -> const a = null;
+        code = code.replace(new RegExp('(=\\s*)\\.{2,}\\s*(?=;|\\n|$)', 'g'), '$1null');
+
+        // 7. Clean up bare placeholder ellipsis (not real spread) inside objects/arrays
+        // Remove trailing comma before } ] ) ; e.g. [1, 2, ...] -> [1, 2] but not [...a]
+        code = code.replace(new RegExp(',\\s*\\.{2,}\\s*(?=[,}\\)\\];])', 'g'), '');
+
+        // 8. Remove bare lines with ellipsis (even with trailing comments)
+        code = code.replace(new RegExp('^\\s*\\.{2,}[^.\\n]*$', 'gm'), '');
+
+        // 9. Clean up double/leading/trailing commas caused by removals
+        // [1, , 3] -> [1, 3]  and  {, a: 1} -> {a: 1}  and  {x: 1,} -> {x: 1}
+        code = code.replace(new RegExp(',\\s*,', 'g'), ',');
+        code = code.replace(new RegExp('(\\{)\\s*,', 'g'), '$1');
+        code = code.replace(new RegExp('(\\[)\\s*,', 'g'), '$1');
+        code = code.replace(new RegExp(',\\s*(\\})', 'g'), '$1');
+        code = code.replace(new RegExp(',\\s*(\\])', 'g'), '$1');
+
+        // 10. Clean up 4+ consecutive dots outside JSX text
+        code = code.replace(new RegExp('\\.{4,}', 'g'), '');
+
+        // 11. Fix missing array brackets in comma-separated object exports
+        var declRegex = new RegExp('((?:export\\s+)?(?:const|let|var)\\s+[a-zA-Z0-9_$]+\\s*=\\s*)(' + notBrackets + ')(\\s*\\{[\\s\\S]*?\\}(?:\\s*,\\s*\\{[\\s\\S]*?\\})+;?)', 'g');
+        code = code.replace(declRegex, function(match, prefix, nb, objects) {
+          var cleanObjs = (nb + objects).trim();
+          var hasSemi = cleanObjs.endsWith(';');
+          if (hasSemi) cleanObjs = cleanObjs.slice(0, -1).trim();
+          var nl = String.fromCharCode(10);
+          return prefix + '[' + nl + cleanObjs + nl + ']' + (hasSemi ? ';' : '');
+        });
+
+        // Fix missing array brackets in default export
+        var defRegex = new RegExp('(export\\s+default\\s+)(' + notBrackets + ')(\\s*\\{[\\s\\S]*?\\}(?:\\s*,\\s*\\{[\\s\\S]*?\\})+;?)', 'g');
+        code = code.replace(defRegex, function(match, prefix, nb, objects) {
+          var cleanObjs = (nb + objects).trim();
+          var hasSemi = cleanObjs.endsWith(';');
+          if (hasSemi) cleanObjs = cleanObjs.slice(0, -1).trim();
+          var nl = String.fromCharCode(10);
+          return prefix + '[' + nl + cleanObjs + nl + ']' + (hasSemi ? ';' : '');
+        });
+
+        // 11b. Deduplicate React imports - merge all 'from react' imports into one
+        var _riNl = String.fromCharCode(10);
+        var _riSq = String.fromCharCode(39);
+        var _riDq = String.fromCharCode(34);
+        var _riLines = code.split(_riNl);
+        var _riReact = [];
+        var _riRest = [];
+        for (var _riI = 0; _riI < _riLines.length; _riI++) {
+          var _riT = _riLines[_riI].trim();
+          var _riIsR = _riT.indexOf('import ') === 0 &&
+            (_riT.indexOf('from ' + _riSq + 'react' + _riSq) !== -1 ||
+             _riT.indexOf('from ' + _riDq + 'react' + _riDq) !== -1);
+          if (_riIsR) { _riReact.push(_riT); } else { _riRest.push(_riLines[_riI]); }
+        }
+        if (_riReact.length > 1) {
+          var _riNamed = {};
+          for (var _riJ = 0; _riJ < _riReact.length; _riJ++) {
+            var _riImp = _riReact[_riJ];
+            var _riStart = _riImp.indexOf('{');
+            var _riEnd = _riImp.indexOf('}');
+            if (_riStart !== -1 && _riEnd !== -1) {
+              var _riParts = _riImp.substring(_riStart + 1, _riEnd).split(',');
+              for (var _riK = 0; _riK < _riParts.length; _riK++) {
+                var _riN = _riParts[_riK].trim();
+                if (_riN && _riN !== 'React') _riNamed[_riN] = true;
+              }
+            }
+          }
+          var _riNamedArr = Object.keys(_riNamed);
+          var _riMerged = 'import React' +
+            (_riNamedArr.length > 0 ? ', { ' + _riNamedArr.join(', ') + ' }' : '') +
+            ' from ' + _riSq + 'react' + _riSq + ';';
+          code = _riMerged + _riNl + _riRest.join(_riNl);
+        }
+
+        return code;
+
+      }
+
+      function requireModule(modName, fromFile) {
+        var R = window.React || {};
+        var RD = window.ReactDOM || {};
+
+        // Framework / external packages
+        if (modName === 'react' || (typeof modName === 'string' && modName.indexOf('react/') === 0)) {
+          return Object.assign({ default: R }, R, {
+            useState: R.useState,
+            useEffect: R.useEffect,
+            useRef: R.useRef,
+            useMemo: R.useMemo,
+            useCallback: R.useCallback,
+            useContext: R.useContext,
+            useReducer: R.useReducer,
+            createContext: R.createContext,
+            Fragment: R.Fragment
+          });
+        }
+        if (modName === 'react-dom' || (typeof modName === 'string' && modName.indexOf('react-dom/') === 0)) {
+          return Object.assign({ default: RD }, RD);
+        }
+
+        // Framer Motion / Motion
+        if (modName === 'framer-motion' || modName === 'motion/react' || modName === 'motion') {
+          var motionProxy = new Proxy({}, {
+            get: function(_, prop) {
+              return function MotionTag(p) {
+                var props = Object.assign({}, p);
+                delete props.initial;
+                delete props.animate;
+                delete props.exit;
+                delete props.transition;
+                delete props.whileHover;
+                delete props.whileTap;
+                delete props.whileInView;
+                delete props.viewport;
+                delete props.layout;
+                delete props.layoutId;
+                return R.createElement ? R.createElement(prop, props) : null;
+              };
+            }
+          });
+          return {
+            motion: motionProxy,
+            AnimatePresence: function(p) { return p.children || null; },
+            useAnimation: function() { return { start: function() {}, stop: function() {} }; },
+            useMotionValue: function(v) { return { get: function() { return v; }, set: function() {} }; },
+            useTransform: function() { return 0; },
+            useSpring: function(v) { return v; },
+            useScroll: function() { return { scrollY: { get: function() { return 0; } }, scrollYProgress: { get: function() { return 0; } } }; },
+            default: { motion: motionProxy, AnimatePresence: function(p) { return p.children || null; } }
+          };
+        }
+
+        // clsx, tailwind-merge, classnames, cn
+        if (
+          modName === 'clsx' ||
+          modName === 'tailwind-merge' ||
+          modName === 'classnames' ||
+          modName === 'clsx/lite' ||
+          modName === '@/lib/utils' ||
+          modName === '@/utils' ||
+          modName === './utils' ||
+          modName === '../utils' ||
+          modName === './lib/utils' ||
+          modName === '../lib/utils' ||
+          modName === 'lib/utils' ||
+          modName === 'utils'
+        ) {
+          var cnFn = function() {
+            var args = Array.from(arguments);
+            var classes = [];
+            for (var i = 0; i < args.length; i++) {
+              var arg = args[i];
+              if (!arg) continue;
+              if (typeof arg === 'string' || typeof arg === 'number') {
+                classes.push(arg);
+              } else if (Array.isArray(arg)) {
+                if (arg.length) {
+                  var inner = cnFn.apply(null, arg);
+                  if (inner) classes.push(inner);
+                }
+              } else if (typeof arg === 'object') {
+                for (var key in arg) {
+                  if (arg[key]) classes.push(key);
+                }
+              }
+            }
+            return classes.join(' ');
+          };
+          cnFn.__esModule = true;
+          cnFn.default = cnFn;
+          cnFn.clsx = cnFn;
+          cnFn.twMerge = cnFn;
+          cnFn.cn = cnFn;
+          cnFn.ClassValue = {};
+          return cnFn;
+        }
+
+        // class-variance-authority / cva / tailwind-variants
+        if (modName === 'class-variance-authority' || modName === 'tailwind-variants' || modName === 'cva') {
+          var cvaFn = function(base, config) {
+            return function(props) {
+              var classes = [base || ''];
+              if (config && config.variants && props) {
+                for (var v in config.variants) {
+                  var val = (props && props[v]) || (config.defaultVariants && config.defaultVariants[v]);
+                  if (val && config.variants[v] && config.variants[v][val]) {
+                    classes.push(config.variants[v][val]);
+                  }
+                }
+              }
+              if (props && props.className) classes.push(props.className);
+              return classes.filter(Boolean).join(' ');
+            };
+          };
+          cvaFn.__esModule = true;
+          cvaFn.default = cvaFn;
+          cvaFn.cva = cvaFn;
+          return cvaFn;
+        }
+
+        // Radix UI Component Emulators
+        if (typeof modName === 'string' && modName.indexOf('@radix-ui/') === 0) {
+          var RadixSlot = function(p) { return (p && p.children) || null; };
+          RadixSlot.__esModule = true;
+          RadixSlot.default = RadixSlot;
+          var RadixProxy = new Proxy(RadixSlot, {
+            get: function(_, prop) {
+              if (prop === '__esModule') return true;
+              if (prop === 'default' || prop === 'Slot') return RadixSlot;
+              return function RadixComp(p) { return (p && p.children) || null; };
+            }
+          });
+          return RadixProxy;
+        }
+
+        // Sonner & Toast
+        if (modName === 'sonner' || modName === 'react-hot-toast') {
+          var toastFn = function() {};
+          toastFn.success = toastFn;
+          toastFn.error = toastFn;
+          toastFn.info = toastFn;
+          toastFn.warning = toastFn;
+          toastFn.custom = toastFn;
+          toastFn.dismiss = function() {};
+          return {
+            __esModule: true,
+            default: toastFn,
+            toast: toastFn,
+            Toaster: function() { return null; }
+          };
+        }
+
+        // Universal Icon Library Emulator (Lucide, Hugeicons, React-Icons, Tabler, Heroicons, Feather, Radix, FontAwesome, etc.)
+        var isIconLib = (
+          modName === 'lucide-react' ||
+          modName === 'hugeicons-react' ||
+          modName === '@hugeicons/react' ||
+          modName === '@hugeicons/core-free-icons' ||
+          modName === 'react-feather' ||
+          modName === 'feather-icons-react' ||
+          (typeof modName === 'string' && (
+            modName.indexOf('lucide') !== -1 ||
+            modName.indexOf('hugeicons') !== -1 ||
+            modName.indexOf('react-icons') !== -1 ||
+            modName.indexOf('@heroicons') !== -1 ||
+            modName.indexOf('@tabler/icons') !== -1 ||
+            modName.indexOf('@radix-ui/react-icons') !== -1 ||
+            modName.indexOf('fontawesome') !== -1 ||
+            modName.indexOf('font-awesome') !== -1 ||
+            modName.indexOf('icon') !== -1
+          ))
+        );
+
+        if (isIconLib) {
+          var resolveSvgForProp = function(propName) {
+            var raw = String(propName || '').trim();
+            if (!raw || raw === '__esModule' || raw === 'default') return null;
+
+            // Direct dictionary lookup
+            if (ICON_PATHS[raw]) return ICON_PATHS[raw];
+
+            // Normalize: strip library prefixes (Fa, Hi, Fi, Bi, Bs, Ai, Md, Ri, Io, Tb, Lu, Vsc, Cg, Gr, Im, Ti, Go, Gi)
+            var clean = raw
+              .replace(/^(Fa|Fi|Hi|Bi|Bs|Ai|Md|Ri|Io|Tb|Lu|Vsc|Cg|Gr|Im|Ti|Go|Gi|Radix|Hero)([A-Z])/, '$2')
+              .replace(/(Icon|Outline|Solid|Fill|Duotone|Rounded|Bold|Light|Stroke|Twotone|Bulk|Sharp)$/i, '')
+              .replace(/0[1-9]$/, '');
+
+            // Case-insensitive direct match
+            var directKey = Object.keys(ICON_PATHS).find(function(k) {
+              return k.toLowerCase() === clean.toLowerCase() || k.toLowerCase() === raw.toLowerCase();
+            });
+            if (directKey && ICON_PATHS[directKey]) return ICON_PATHS[directKey];
+
+            // Semantic heuristic fallback
+            var l = clean.toLowerCase();
+            if (l.indexOf('turnbackward') !== -1 || l.indexOf('backward') !== -1 || l.indexOf('undo') !== -1 || l.indexOf('revert') !== -1) return ICON_PATHS.ArrowTurnBackward;
+            if (l.indexOf('user') !== -1 || l.indexOf('profile') !== -1 || l.indexOf('account') !== -1 || l.indexOf('avatar') !== -1) return ICON_PATHS.User;
+            if (l.indexOf('sparkle') !== -1 || l.indexOf('magic') !== -1 || l.indexOf('star') !== -1) return ICON_PATHS.Sparkles;
+            if (l.indexOf('bot') !== -1 || l.indexOf('robot') !== -1 || l.indexOf('ai') !== -1) return ICON_PATHS.Bot;
+            if (l.indexOf('chat') !== -1 || l.indexOf('message') !== -1 || l.indexOf('comment') !== -1) return ICON_PATHS.MessageSquare;
+            if (l.indexOf('send') !== -1) return ICON_PATHS.Send;
+            if (l.indexOf('heart') !== -1 || l.indexOf('like') !== -1) return ICON_PATHS.Heart;
+            if (l.indexOf('check') !== -1 || l.indexOf('tick') !== -1 || l.indexOf('success') !== -1) return ICON_PATHS.Check;
+            if (l.indexOf('close') !== -1 || l.indexOf('cancel') !== -1 || l.indexOf('cross') !== -1 || l === 'x') return ICON_PATHS.X;
+            if (l.indexOf('search') !== -1 || l.indexOf('find') !== -1) return ICON_PATHS.Search;
+            if (l.indexOf('setting') !== -1 || l.indexOf('gear') !== -1 || l.indexOf('config') !== -1) return ICON_PATHS.Settings;
+            if (l.indexOf('home') !== -1 || l.indexOf('house') !== -1) return ICON_PATHS.Home;
+            if (l.indexOf('bell') !== -1 || l.indexOf('notif') !== -1) return ICON_PATHS.Bell;
+            if (l.indexOf('trash') !== -1 || l.indexOf('delete') !== -1 || l.indexOf('remove') !== -1) return ICON_PATHS.Trash2;
+            if (l.indexOf('edit') !== -1 || l.indexOf('pencil') !== -1 || l.indexOf('write') !== -1) return ICON_PATHS.Edit;
+            if (l.indexOf('plus') !== -1 || l.indexOf('add') !== -1) return ICON_PATHS.Plus;
+            if (l.indexOf('minus') !== -1) return ICON_PATHS.Minus;
+            if (l.indexOf('cart') !== -1 || l.indexOf('shop') !== -1 || l.indexOf('bag') !== -1) return ICON_PATHS.ShoppingCart;
+            if (l.indexOf('arrow') !== -1 && l.indexOf('right') !== -1) return ICON_PATHS.ArrowRight;
+            if (l.indexOf('arrow') !== -1 && l.indexOf('left') !== -1) return ICON_PATHS.ArrowLeft;
+            if (l.indexOf('arrow') !== -1 && l.indexOf('up') !== -1) return ICON_PATHS.ArrowUp;
+            if (l.indexOf('arrow') !== -1 && l.indexOf('down') !== -1) return ICON_PATHS.ArrowDown;
+            if (l.indexOf('chevron') !== -1 && l.indexOf('right') !== -1) return ICON_PATHS.ChevronRight;
+            if (l.indexOf('chevron') !== -1 && l.indexOf('left') !== -1) return ICON_PATHS.ChevronLeft;
+            if (l.indexOf('chevron') !== -1 && l.indexOf('down') !== -1) return ICON_PATHS.ChevronDown;
+            if (l.indexOf('chevron') !== -1 && l.indexOf('up') !== -1) return ICON_PATHS.ChevronUp;
+            if (l.indexOf('sun') !== -1 || l.indexOf('light') !== -1) return ICON_PATHS.Sun;
+            if (l.indexOf('moon') !== -1 || l.indexOf('dark') !== -1) return ICON_PATHS.Moon;
+            if (l.indexOf('eye') !== -1) return ICON_PATHS.Eye;
+            if (l.indexOf('copy') !== -1) return ICON_PATHS.Copy;
+            if (l.indexOf('refresh') !== -1 || l.indexOf('reload') !== -1 || l.indexOf('rotate') !== -1) return ICON_PATHS.RefreshCw;
+            if (l.indexOf('download') !== -1) return ICON_PATHS.Download;
+            if (l.indexOf('upload') !== -1) return ICON_PATHS.Upload;
+            if (l.indexOf('play') !== -1) return ICON_PATHS.Play;
+            if (l.indexOf('pause') !== -1) return ICON_PATHS.Pause;
+            if (l.indexOf('volume') !== -1 || l.indexOf('sound') !== -1 || l.indexOf('audio') !== -1) return ICON_PATHS.Volume2;
+            if (l.indexOf('mail') !== -1 || l.indexOf('email') !== -1 || l.indexOf('inbox') !== -1) return ICON_PATHS.Mail;
+            if (l.indexOf('phone') !== -1 || l.indexOf('call') !== -1) return ICON_PATHS.Phone;
+            if (l.indexOf('code') !== -1 || l.indexOf('dev') !== -1) return ICON_PATHS.Code;
+            if (l.indexOf('term') !== -1 || l.indexOf('console') !== -1) return ICON_PATHS.Terminal;
+            if (l.indexOf('globe') !== -1 || l.indexOf('web') !== -1 || l.indexOf('internet') !== -1) return ICON_PATHS.Globe;
+            if (l.indexOf('lock') !== -1 || l.indexOf('secure') !== -1) return ICON_PATHS.Lock;
+            if (l.indexOf('shield') !== -1 || l.indexOf('protect') !== -1) return ICON_PATHS.Shield;
+            if (l.indexOf('card') !== -1 || l.indexOf('pay') !== -1 || l.indexOf('wallet') !== -1) return ICON_PATHS.CreditCard;
+            if (l.indexOf('file') !== -1 || l.indexOf('doc') !== -1) return ICON_PATHS.File;
+            if (l.indexOf('folder') !== -1) return ICON_PATHS.Folder;
+            if (l.indexOf('chart') !== -1 || l.indexOf('stat') !== -1 || l.indexOf('analytics') !== -1) return ICON_PATHS.BarChart;
+            if (l.indexOf('menu') !== -1 || l.indexOf('list') !== -1 || l.indexOf('hamburger') !== -1) return ICON_PATHS.Menu;
+            if (l.indexOf('share') !== -1) return ICON_PATHS.Share2;
+            if (l.indexOf('help') !== -1 || l.indexOf('question') !== -1) return ICON_PATHS.HelpCircle;
+            if (l.indexOf('info') !== -1) return ICON_PATHS.Info;
+
+            // Clean minimalist geometric icon shape (sleek ring with centered accent)
+            return '<circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/>';
+          };
+
+          var createIconComponent = function(iconName) {
+            return function DynamicIcon(p) {
+              var size = (p && (p.size || p.size === 0 ? p.size : 18)) || 18;
+              var strokeWidth = (p && (p.strokeWidth || p.strokeWidth === 0 ? p.strokeWidth : 2)) || 2;
+              var className = (p && p.className) || '';
+              var innerSvg = resolveSvgForProp(iconName);
+              return R.createElement ? R.createElement('svg', {
+                xmlns: 'http://www.w3.org/2000/svg',
+                width: size,
+                height: size,
+                viewBox: '0 0 24 24',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: strokeWidth,
+                strokeLinecap: 'round',
+                strokeLinejoin: 'round',
+                className: className,
+                dangerouslySetInnerHTML: { __html: innerSvg }
+              }) : null;
+            };
+          };
+
+          var iconLibProxy = new Proxy({}, {
+            get: function(_, prop) {
+              if (prop === '__esModule') return true;
+              if (prop === 'default') return createIconComponent(typeof modName === 'string' ? modName.split('/').pop() : 'Icon');
+              return createIconComponent(String(prop));
+            }
+          });
+          return iconLibProxy;
+        }
+
+        // React Router Dom / Wouter Emulator
+        if (modName === 'react-router-dom' || modName === 'react-router' || modName === 'wouter') {
+          var RouterContext = R.createContext ? R.createContext({ path: '/', navigate: function() {} }) : null;
+          function RouterProvider(props) {
+            var state = R.useState ? R.useState(window.location.hash.slice(1) || '/') : ['/', function() {}];
+            var currentPath = state[0];
+            var setPath = state[1];
+            R.useEffect ? R.useEffect(function() {
+              var onHash = function() { setPath(window.location.hash.slice(1) || '/'); };
+              window.addEventListener('hashchange', onHash);
+              return function() { window.removeEventListener('hashchange', onHash); };
+            }, []) : null;
+            var nav = function(to) { window.location.hash = '#' + to; setPath(to); };
+            return R.createElement ? R.createElement(RouterContext.Provider, { value: { path: currentPath, navigate: nav } }, props.children) : null;
+          }
+          function RoutesComp(props) {
+            var ctx = (R.useContext && RouterContext) ? R.useContext(RouterContext) : { path: '/' };
+            var children = Array.isArray(props.children) ? props.children : [props.children];
+            for (var i = 0; i < children.length; i++) {
+              var child = children[i];
+              if (!child || !child.props) continue;
+              var routePath = child.props.path || '/';
+              if (routePath === '*' || routePath === ctx.path || (routePath !== '/' && ctx.path.indexOf(routePath) === 0)) {
+                return child.props.element || (child.props.Component ? R.createElement(child.props.Component) : (child.props.children || null));
+              }
+            }
+            return children[0] ? (children[0].props.element || (children[0].props.Component ? R.createElement(children[0].props.Component) : null)) : null;
+          }
+          function RouteComp(props) {
+            return props.element || (props.Component ? R.createElement(props.Component) : (props.children || null));
+          }
+          function LinkComp(props) {
+            var ctx = (R.useContext && RouterContext) ? R.useContext(RouterContext) : { navigate: function() {} };
+            return R.createElement ? R.createElement('a', Object.assign({}, props, {
+              href: '#' + (props.to || props.href || '/'),
+              onClick: function(e) {
+                e.preventDefault();
+                if (ctx.navigate) ctx.navigate(props.to || props.href || '/');
+              }
+            }), props.children) : null;
+          }
+          return {
+            BrowserRouter: RouterProvider,
+            HashRouter: RouterProvider,
+            MemoryRouter: RouterProvider,
+            Router: RouterProvider,
+            Routes: RoutesComp,
+            Route: RouteComp,
+            Link: LinkComp,
+            NavLink: LinkComp,
+            Outlet: function(p) { return p.children || null; },
+            useNavigate: function() {
+              var ctx = (R.useContext && RouterContext) ? R.useContext(RouterContext) : { navigate: function() {} };
+              return ctx.navigate || function() {};
+            },
+            useLocation: function() {
+              var ctx = (R.useContext && RouterContext) ? R.useContext(RouterContext) : { path: '/' };
+              return { pathname: ctx.path, search: '', hash: '' };
+            },
+            useParams: function() { return {}; },
+            useSearchParams: function() { return [new URLSearchParams(), function() {}]; },
+            Navigate: function(p) {
+              R.useEffect ? R.useEffect(function() { if (p && p.to) window.location.hash = '#' + p.to; }, []) : null;
+              return null;
+            }
+          };
+        }
+
+        // Next.js Link & Router Stubs
+        if (modName === 'next/link') {
+          return function NextLink(p) {
+            return R.createElement ? R.createElement('a', Object.assign({ href: p.href || '#' }, p), p.children) : null;
+          };
+        }
+        if (modName === 'next/router' || modName === 'next/navigation') {
+          return {
+            useRouter: function() { return { push: function() {}, replace: function() {}, pathname: '/' }; },
+            usePathname: function() { return '/'; },
+            useSearchParams: function() { return new URLSearchParams(); }
+          };
+        }
+        if (modName === 'next/image') {
+          return function NextImage(p) {
+            return R.createElement ? R.createElement('img', Object.assign({}, p, { src: p.src || '' })) : null;
+          };
+        }
+
+        if (modName === 'axios') {
+          var axiosStub = function(url) { return window.fetch(url).then(function(r) { return r.json(); }).then(function(d) { return { data: d }; }); };
+          axiosStub.get = function(url) { return axiosStub(url); };
+          axiosStub.post = function(url, data) { return window.fetch(url, { method: 'POST', body: JSON.stringify(data) }).then(function(r) { return r.json(); }).then(function(d) { return { data: d }; }); };
+          return axiosStub;
+        }
+
+        if (modName === 'canvas-confetti') {
+          return window.confetti || function() {};
+        }
+
+        // Resolve against project fileMap
+        var resolvedKey = resolveFileKey(modName, fromFile);
+        if (resolvedKey && fileMap[resolvedKey]) {
+          var normTarget = normalizeModPath(resolvedKey);
+          if (moduleCache[normTarget]) {
+            return moduleCache[normTarget].exports;
+          }
+
+          var fileItem = fileMap[resolvedKey];
+          var mod = { exports: {} };
+          moduleCache[normTarget] = mod;
+
+          try {
+            var cleanCode = autoRepairCode(fileItem.content || '', resolvedKey);
+
+            var isTS = resolvedKey.endsWith('.ts') || resolvedKey.endsWith('.tsx');
+            var presets = [
+              // Target Chrome 80+ — native spread/arrow/const support, only transform modules
+              ['env', { modules: 'commonjs', loose: true, targets: { chrome: '80' } }],
+              ['react', { runtime: 'classic' }]
+            ];
+            if (isTS && window.Babel && window.Babel.availablePresets && window.Babel.availablePresets.typescript) {
+              presets.unshift(['typescript', { isTSX: true, allExtensions: true }]);
+            }
+
+            var res = window.Babel.transform(cleanCode, {
+              presets: presets,
+              plugins: [],
+              filename: resolvedKey
+            });
+
+            var scopedRequire = function(reqPath) {
+              return requireModule(reqPath, resolvedKey);
+            };
+
+            var execFn = new Function(
+              'exports', 'require', 'module', 'React', 'ReactDOM',
+              'useState', 'useEffect', 'useRef', 'useMemo',
+              'useCallback', 'useContext', 'useReducer', 'createContext', 'Fragment',
+              '_extends', '_objectSpread', '_interopRequireDefault', '_interopRequireWildcard',
+              '_toConsumableArray', '_slicedToArray', '_defineProperty',
+              res.code
+            );
+
+            execFn(
+              mod.exports,
+              scopedRequire,
+              mod,
+              R,
+              RD,
+              R.useState, R.useEffect, R.useRef, R.useMemo,
+              R.useCallback, R.useContext, R.useReducer, R.createContext, R.Fragment,
+              window._extends, window._objectSpread, window._interopRequireDefault, window._interopRequireWildcard,
+              window._toConsumableArray, window._slicedToArray, window._defineProperty
+            );
+
+            if (mod.exports && typeof mod.exports === 'object') {
+              mod.exports.__esModule = true;
+            }
+            return mod.exports;
+          } catch (modErr) {
+            console.warn('[PWNAI Module Bundler] Module notice "' + resolvedKey + '":', modErr);
+            var safeFallbackProxy = new Proxy({}, {
+              get: function(_, prop) {
+                if (prop === '__esModule') return true;
+                if (prop === 'default' || (typeof prop === 'string' && prop.charAt(0) >= 'A' && prop.charAt(0) <= 'Z')) {
+                  return function SafeStub(props) {
+                    return R.createElement ? R.createElement('div', {
+                      style: { padding: '6px 10px', background: 'rgba(239, 68, 68, 0.08)', borderRadius: '6px', color: '#f87171', fontSize: '11px', margin: '4px 0' }
+                    }, (props && props.children) || ('[' + String(prop) + ']')) : null;
+                  };
+                }
+                return [];
+              }
+            });
+            mod.exports = safeFallbackProxy;
+            return mod.exports;
+          }
+        }
+
+        // Safe stub for unknown/unresolved modules — callable proxy that never crashes with "... is not a function"
+        function createSafeStub(name) {
+          var stubFn = function SafeStubCallable() {
+            var args = Array.from(arguments);
+            if (args.length > 0 && args[0] && typeof args[0] === 'object' && ('children' in args[0] || 'className' in args[0])) {
+              return args[0].children || null;
+            }
+            return '';
+          };
+          stubFn.__esModule = true;
+          stubFn.default = stubFn;
+          return new Proxy(stubFn, {
+            get: function(target, prop) {
+              if (prop === '__esModule') return true;
+              if (prop === 'default') return stubFn;
+              if (typeof prop === 'symbol') return undefined;
+              if (prop === 'then' || prop === 'catch') return undefined;
+              return createSafeStub(String(prop));
+            }
+          });
+        }
+        return createSafeStub(modName);
+      }
+
+      function runProject(rawFiles) {
+        if (!rawFiles || !rawFiles.length) return;
+        hasReceivedFirstRun = true;
+
+        var loader = document.getElementById('__pwnai_loader');
+        if (loader) loader.style.display = 'none';
+
+        moduleCache = {};
+        fileMap = {};
+
+        var overlay = document.getElementById('__err_overlay');
+        if (overlay) overlay.style.display = 'none';
+
+        waitForDependencies(function() {
+          var R = window.React;
+          var RD = window.ReactDOM;
+
+          if (!R || !RD) {
+            displayError('runtime', 'React Yüklenemedi', 'React ve ReactDOM kütüphaneleri yüklenemedi. Lütfen internet bağlantınızı kontrol edin.');
+            return;
+          }
+
+          window.useState = R.useState;
+          window.useEffect = R.useEffect;
+          window.useRef = R.useRef;
+          window.useMemo = R.useMemo;
+          window.useCallback = R.useCallback;
+          window.useContext = R.useContext;
+          window.useReducer = R.useReducer;
+          window.createContext = R.createContext;
+          window.Fragment = R.Fragment;
+
+          try {
+            // 1. Process and inject styles (CSS)
+            var cssFiles = rawFiles.filter(function(f) { return (f.name || '').endsWith('.css'); });
+            var existingStyles = document.querySelectorAll('style[data-pwnai-injected]');
+            existingStyles.forEach(function(s) { s.remove(); });
+
+            cssFiles.forEach(function(cf) {
+              var styleEl = document.createElement('style');
+              styleEl.setAttribute('data-pwnai-injected', 'true');
+              styleEl.textContent = cf.content;
+              document.head.appendChild(styleEl);
+            });
+
+            // 2. Populate fileMap with all files
+            rawFiles.forEach(function(f) {
+              var n = cleanPath(f.name || '');
+              fileMap[n] = f;
+            });
+
+            // 3. Locate entry file (App / Main / index)
+            var allKeys = Object.keys(fileMap);
+            var codeKeys = allKeys.filter(function(k) {
+              var n = k.toLowerCase();
+              return n.endsWith('.jsx') || n.endsWith('.tsx') || n.endsWith('.js') || n.endsWith('.ts');
+            });
+
+            // Exclude helper/data/types files when picking primary entry
+            var candidateKeys = codeKeys.filter(function(k) {
+              var lower = k.toLowerCase();
+              return !(
+                lower.indexOf('/data/') !== -1 ||
+                lower.indexOf('mockdata') !== -1 ||
+                lower.indexOf('/types/') !== -1 ||
+                lower.indexOf('/utils/') !== -1 ||
+                lower.indexOf('constants') !== -1
+              );
+            });
+            if (candidateKeys.length === 0) candidateKeys = codeKeys;
+
+            var entryFile = null;
+            // Exact priority: App.tsx / App.jsx / src/App.tsx / src/App.jsx / Main / Index
+            var priorities = [
+              'app.tsx', 'app.jsx', 'src/app.tsx', 'src/app.jsx',
+              'main.tsx', 'main.jsx', 'src/main.tsx', 'src/main.jsx',
+              'index.tsx', 'index.jsx', 'src/index.tsx', 'src/index.jsx',
+              'app.js', 'src/app.js', 'main.js', 'src/main.js', 'index.js', 'src/index.js'
+            ];
+
+            for (var p = 0; p < priorities.length; p++) {
+              for (var c = 0; c < candidateKeys.length; c++) {
+                if (cleanPath(candidateKeys[c]).toLowerCase() === priorities[p]) {
+                  entryFile = candidateKeys[c];
+                  break;
+                }
+              }
+              if (entryFile) break;
+            }
+
+            if (!entryFile) {
+              for (var a = 0; a < candidateKeys.length; a++) {
+                if (candidateKeys[a].toLowerCase().indexOf('app') !== -1) {
+                  entryFile = candidateKeys[a];
+                  break;
+                }
+              }
+            }
+
+            if (!entryFile && candidateKeys.length > 0) {
+              entryFile = candidateKeys[0];
+            }
+
+            function resolveComponent(cand) {
+              if (!cand) return null;
+              if (typeof cand === 'function') return cand;
+              if (typeof cand === 'object') {
+                if (typeof cand.default === 'function') return cand.default;
+                if (cand.$$typeof) return cand;
+                if (cand.default && (typeof cand.default === 'object' || typeof cand.default === 'function')) {
+                  return resolveComponent(cand.default);
+                }
+              }
+              return null;
+            }
+
+            var RootComponent = null;
+            if (entryFile) {
+              var appExports = requireModule(entryFile, '');
+              RootComponent = resolveComponent(appExports.default) || resolveComponent(appExports.App) || resolveComponent(appExports.Main) || resolveComponent(appExports);
+            }
+
+            // Fallback search across candidate modules if App not resolved
+            if (!RootComponent) {
+              candidateKeys.forEach(function(k) {
+                if (!RootComponent) {
+                  var exp = requireModule(k, '');
+                  RootComponent = resolveComponent(exp.default) || resolveComponent(exp.App) || resolveComponent(exp);
+                }
+              });
+            }
+
+            if (RootComponent && (typeof RootComponent === 'function' || typeof RootComponent === 'object')) {
+              var rootEl = document.getElementById('root');
+              if (RD.createRoot) {
+                if (!window.__pwnai_react_root) {
+                  window.__pwnai_react_root = RD.createRoot(rootEl);
+                }
+                window.__pwnai_react_root.render(R.createElement(RootComponent));
+              } else {
+                RD.render(R.createElement(RootComponent), rootEl);
+              }
+            } else {
+              // Check if HTML file exists
+              var htmlFile = rawFiles.find(function(f) { return (f.name || '').endsWith('.html'); });
+              if (htmlFile && htmlFile.content) {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(htmlFile.content, 'text/html');
+                Array.from(doc.head.querySelectorAll('style, link[rel="stylesheet"]')).forEach(function(el) {
+                  document.head.appendChild(el.cloneNode(true));
+                });
+                var rootEl2 = document.getElementById('root');
+                if (rootEl2) {
+                  rootEl2.innerHTML = doc.body.innerHTML;
+                  Array.from(rootEl2.querySelectorAll('script')).forEach(function(oldScript) {
+                    var newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach(function(attr) {
+                      newScript.setAttribute(attr.name, attr.value);
+                    });
+                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                  });
+                  return;
+                }
+              }
+              displayError('build', 'Root Bileşen Bulunamadı', 'Projeden dışa aktarılan App bileşeni bulunamadı. Lütfen "export default function App()" tanımlayın.');
+            }
+          } catch (globalErr) {
+            console.error("Global run error:", globalErr);
+            displayError('runtime', 'Genel Hata', (globalErr && globalErr.stack) || String(globalErr));
+          }
+        });
+      }
+
+      // Safely decode initial files from the Base64 script payload
+      var initialFiles = [];
+      try {
+        var filesPayloadEl = document.getElementById('__pwnai_initial_files');
+        if (filesPayloadEl && filesPayloadEl.textContent) {
+          var rawPayload = filesPayloadEl.textContent.trim();
+          if (rawPayload) {
+            var decodedJson = decodeURIComponent(
+              Array.prototype.map
+                .call(atob(rawPayload), function(c) {
+                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                })
+                .join('')
+            );
+            initialFiles = JSON.parse(decodedJson);
+          }
+        }
+      } catch (payloadErr) {
+        console.error('[PWNAI] Failed to parse initial files payload:', payloadErr);
+      }
+
+      if (initialFiles && initialFiles.length > 0) {
+        runProject(initialFiles);
+      }
+
+      // Listen for project code updates from parent via Structured Clone postMessage
+      window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'PWNAI_RUN_PROJECT') {
+          runProject(event.data.files);
+        }
+      });
+
+      // Signal parent that runner is ready immediately
+      window.parent.postMessage({ type: 'PWNAI_PREVIEW_READY' }, '*');
+
+      // Handshake polling until first project run to eliminate race conditions
+      var readyInterval = setInterval(function() {
+        if (hasReceivedFirstRun) {
+          clearInterval(readyInterval);
+          return;
+        }
+        window.parent.postMessage({ type: 'PWNAI_PREVIEW_READY' }, '*');
+      }, 200);
+
+      window.addEventListener('DOMContentLoaded', function() {
+        window.parent.postMessage({ type: 'PWNAI_PREVIEW_READY' }, '*');
+      });
+      window.addEventListener('load', function() {
+        window.parent.postMessage({ type: 'PWNAI_PREVIEW_READY' }, '*');
+      });
+    })();
+  </script>
+</body>
+</html>
