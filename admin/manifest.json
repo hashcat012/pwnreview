@@ -2,6 +2,11 @@
   "username": "admin",
   "projects": [
     {
+      "name": "pwnai2",
+      "title": "PwnAI2",
+      "updatedAt": "2026-10-17T10:22:51.888Z"
+    },
+    {
       "name": "ai5",
       "title": "ai5",
       "updatedAt": "2026-09-15T17:43:53.578Z"
